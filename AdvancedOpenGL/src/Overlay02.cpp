@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+﻿#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/glm.hpp>
@@ -9,6 +9,7 @@
 #include "freetype/freetype.h"
 #include "Shader.h"
 #include <iostream>
+#include <array>
 #include <map>
 struct Character
 {
@@ -65,25 +66,45 @@ void draw2D(GLFWwindow* window,Shader &shader,double x,double y, double w, doubl
 	glBindVertexArray(0);
 }
 
-void renderText(GLFWwindow* window,std::map<GLchar,Character> &characters, const std::string& string, Shader& shader, int xPos, int yPos,double scale=0.5)
+void renderText(const std::u32string& str,const FT_Face &face,Shader& shader, GLFWwindow* window, unsigned int x=0, unsigned int y=0)
 {
-	glm::ivec2 wDim;
-	glfwGetWindowSize(window, &wDim.x, &wDim.y);
-	shader.use();
-	shader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
-	shader.setVec2("wDim", wDim);
-	shader.setInt("text", 0);
-	for (const unsigned int c : string)
+	FT_GlyphSlot slot = face->glyph;
+	float scale = 0.5;
+	GLuint texture;
+	glGenTextures(1, &texture);
+	for (const char32_t& ch : str)
 	{
-		Character ch{ characters[c] };
-		int x= xPos+ch.bearing.x*scale;
-		int y =yPos + ch.size.y * scale-ch.bearing.y*scale;
+		if (FT_Load_Char(face, ch, FT_LOAD_RENDER))
+			std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, slot->bitmap.width, slot->bitmap.rows,0,
+			GL_RED,	GL_UNSIGNED_BYTE, slot->bitmap.buffer
+		);
+		// Set texture options
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		glm::ivec2 wDim;
+		glfwGetWindowSize(window, &wDim.x, &wDim.y);
+		shader.use();
+		shader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
+		shader.setVec2("wDim", wDim);
+		shader.setInt("text", 0);
+		
+		unsigned int w = slot->bitmap.width, h=slot->bitmap.rows;
+		float bearX = slot->bitmap_left;
+		float bearY =-slot->bitmap_top;
+
 		float vertices[] =
 		{
-			x, y, 0.0f,1.0f,
-			x + ch.size.x*scale, y,1.0f,1.0f,
-			x, y - ch.size.y*scale,0.0f,0.0f,
-			x + ch.size.x*scale, y -ch.size.y*scale,1.0f,0.0f
+			x+bearX, y+bearY, 0.0f, 0.0f,
+			x+bearX + w, y+bearY, 1.0f,0.0f,
+			x+bearX, y+bearY + h, 0.0f,1.0f,
+			x+bearX + w, y+bearY + h, 1.0f,1.0f
 		};
 
 		unsigned int VAO, VBO;
@@ -92,21 +113,17 @@ void renderText(GLFWwindow* window,std::map<GLchar,Character> &characters, const
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 		// position attribute
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float),nullptr);
+		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, ch.texture2D);
-
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		xPos += (ch.advance>>6)*scale;
+		x += slot->advance.x >> 6;
 	}
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -208,77 +225,33 @@ int main()
 		return -1;
 	}
 
-	//FreeType
+	//FreeTypeLoad
 	FT_Library ft;
 	if(FT_Init_FreeType(&ft))
 		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
 	FT_Face face;
-	if (FT_New_Face(ft, "fonts/BKANT.ttf", 0, &face))
+	if (FT_New_Face(ft, "fonts/NotoSansKhmerUI-Thin.ttf", 0, &face))
 		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
 	FT_Set_Pixel_Sizes(face, 48,0);
 	if (FT_Load_Char(face,'D', FT_LOAD_RENDER))
 		std::cout << "ERROR::FREETYTPE: Failed to load Glyph " << std::endl;
-
-	
-
-	std::map<GLchar, Character> characters;
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	for (GLubyte c = 0; c < 128; c++)
-	{
-		// Load character glyph 
-		if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-		{
-			std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
-			continue;
-		}
-		// Generate texture
-		GLuint texture;
-		glGenTextures(1, &texture);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			GL_RED,
-			face->glyph->bitmap.width,
-			face->glyph->bitmap.rows,
-			0,
-			GL_RED,
-			GL_UNSIGNED_BYTE,
-			face->glyph->bitmap.buffer
-		);
-		// Set texture options
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		// Now store character for later use
-		Character character = {
-			texture,
-			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-			face->glyph->advance.x
-		};
-		characters.insert(std::pair<GLchar, Character>(c, character));
-	}
-	FT_Done_Face(face);
-	FT_Done_FreeType(ft);
 	Shader textShader("shader/text/vertex.vs", "shader/text/fragment.fs");
-	//FreeType----------End
+	//FreeTypeLoad----------End
 
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))
 	{
 		// input
-		// -----
 		processInput(window);
+		// input---end
 
 		// render
-		// ------
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glClearColor(0.6f, 0.7f, 0.8f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// render---end
 
 
 		//Draw2D
@@ -286,7 +259,12 @@ int main()
 		glDisable(GL_CULL_FACE);
 		Shader shader("shader/2d/vertex.vs", "shader/2d/fragment.fs");
 		draw2D(window,shader, 10, 40,100, 30);
-		renderText(window, characters, "Heggg The World", textShader, 200, 80,1);
+		//DrawText
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		renderText(U"សួស្តីពិភពលោក", face, textShader,window, 100, 200);
+		//DrawText---End
+
+
 		//Draw2D---End
 
 
@@ -308,6 +286,8 @@ int main()
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	// ------------------------------------------------------------------
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
 	glfwTerminate();
 	return 0;
 }
