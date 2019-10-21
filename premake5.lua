@@ -21,6 +21,7 @@ project "AdvancedOpenGL"
     {
         "%{prj.name}/**.cpp",
         "%{prj.name}/**.h",
+        "{prj.name}/**.c",
         "%{prj.name}/**.hpp",
         "%{prj.name}/**.inl",
     }
