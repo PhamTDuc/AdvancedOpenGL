@@ -11,14 +11,15 @@
 #include <iostream>
 #include <array>
 #include <map>
-struct Character
-{
-	GLuint texture2D;
-	glm::ivec2 size;
-	glm::ivec2 bearing;
-	FT_Pos advance;
-};
 
+// settings
+static unsigned int SCR_WIDTH = 800;
+static unsigned int SCR_HEIGHT = 600;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow* window);
+
+//The Origin Coordinates of XY is Top-Left of the screen (0,0) 
+//The Origin Coordinates of XY is Top-Left of the screen (0,0) 
 struct CoreMouse
 {
 	double x, y; //Current Mouse Position
@@ -32,13 +33,25 @@ struct CoreMouse
 };
 static CoreMouse mouse;
 
-void draw2D(GLFWwindow* window,Shader &shader,double x,double y, double w, double h)
+struct Character
 {
-	glm::ivec2 wDim;
-	glfwGetWindowSize(window, &wDim.x, &wDim.y);
+	GLuint texture2D;
+	glm::ivec2 size;
+	glm::ivec2 bearing;
+	FT_Pos advance;
+};
+
+enum class Align
+{ LeftAlign=0, 
+  RightAlign,
+};
+
+void draw2D(GLFWwindow* window,Shader &shader, const glm::vec3 color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0,unsigned int  y=0, unsigned int w=100,unsigned int h=20)
+//X,Y is Top-Left coordinates in pixels
+{
 	shader.use();
-	shader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
-	shader.setVec2("wDim", wDim);
+	shader.setVec3("color", color);
+	shader.setVec2("wDim", SCR_WIDTH,SCR_HEIGHT);
 	float vertices[] =
 	{
 		x, y,
@@ -66,75 +79,130 @@ void draw2D(GLFWwindow* window,Shader &shader,double x,double y, double w, doubl
 	glBindVertexArray(0);
 }
 
-void renderText(const std::u32string& str,const FT_Face &face,Shader& shader, GLFWwindow* window, unsigned int x=0, unsigned int y=0)
+void renderText(const std::u32string& str,const FT_Face &face, GLFWwindow* window, Shader& shader,const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0, unsigned int y=0,Align align=Align::LeftAlign)
+//X,Y is Bottom-Left coordinates in pixels
+//Y = Ytop-left  + textHeight(pixels)
 {
-	FT_GlyphSlot slot = face->glyph;
 	float scale = 0.5;
 	GLuint texture;
 	glGenTextures(1, &texture);
-	for (const char32_t& ch : str)
+	FT_GlyphSlot slot = face->glyph;
+
+	switch (align)
 	{
-		if (FT_Load_Char(face, ch, FT_LOAD_RENDER))
-			std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, slot->bitmap.width, slot->bitmap.rows,0,
-			GL_RED,	GL_UNSIGNED_BYTE, slot->bitmap.buffer
-		);
-		// Set texture options
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-
-		glm::ivec2 wDim;
-		glfwGetWindowSize(window, &wDim.x, &wDim.y);
-		shader.use();
-		shader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
-		shader.setVec2("wDim", wDim);
-		shader.setInt("text", 0);
-		
-		unsigned int w = slot->bitmap.width, h=slot->bitmap.rows;
-		float bearX = slot->bitmap_left;
-		float bearY =-slot->bitmap_top;
-
-		float vertices[] =
+	case Align::LeftAlign:
+		for (int i = 0; i < str.length(); ++i)
 		{
-			x+bearX, y+bearY, 0.0f, 0.0f,
-			x+bearX + w, y+bearY, 1.0f,0.0f,
-			x+bearX, y+bearY + h, 0.0f,1.0f,
-			x+bearX + w, y+bearY + h, 1.0f,1.0f
-		};
+			if (FT_Load_Char(face, str[i], FT_LOAD_RENDER))
+				std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
+			glBindTexture(GL_TEXTURE_2D, texture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, slot->bitmap.width, slot->bitmap.rows, 0,
+				GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer
+			);
+			// Set texture options
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture);
 
-		unsigned int VAO, VBO;
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
+			shader.use();
+			shader.setVec3("color", color);
+			shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+			shader.setInt("text", 0);
 
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+			unsigned int w = slot->bitmap.width, h = slot->bitmap.rows;
+			float bearX = slot->bitmap_left;
+			float bearY = -slot->bitmap_top;
 
-		// position attribute
-		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+			float vertices[] =
+			{
+				x + bearX, y + bearY, 0.0f, 0.0f,
+				x + bearX + w, y + bearY, 1.0f,0.0f,
+				x + bearX, y + bearY + h, 0.0f,1.0f,
+				x + bearX + w, y + bearY + h, 1.0f,1.0f
+			};
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		x += slot->advance.x >> 6;
+			unsigned int VAO, VBO;
+			glGenVertexArrays(1, &VAO);
+			glGenBuffers(1, &VBO);
+
+			glBindVertexArray(VAO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+			// position attribute
+			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			x += slot->advance.x >> 6;
+		}
+		break;
+	case Align::RightAlign:
+		for (int i = str.length() - 1; i >= 0; --i)
+		{
+			if (FT_Load_Char(face, str[i], FT_LOAD_RENDER))
+				std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
+			glBindTexture(GL_TEXTURE_2D, texture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, slot->bitmap.width, slot->bitmap.rows, 0,
+				GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer
+			);
+			// Set texture options
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, texture);
+
+			shader.use();
+			shader.setVec3("color", color);
+			shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+			shader.setInt("text", 0);
+
+			unsigned int w = slot->bitmap.width, h = slot->bitmap.rows;
+			float bearX = slot->bitmap_left;
+			float bearY = -slot->bitmap_top;
+
+			float vertices[] =
+			{
+				x - bearX, y + bearY, 1.0f, 0.0f,
+				x - bearX - w, y + bearY, 0.0f,0.0f,
+				x - bearX, y + bearY + h, 1.0f,1.0f,
+				x - bearX - w, y + bearY + h, 0.0f,1.0f
+			};
+
+			unsigned int VAO, VBO;
+			glGenVertexArrays(1, &VAO);
+			glGenBuffers(1, &VBO);
+
+			glBindVertexArray(VAO);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+			// position attribute
+			glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glBindVertexArray(VAO);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			x -= slot->advance.x >> 6;
+		}
+		break;
 	}
+	
+
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
-
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 int main()
 {
@@ -230,13 +298,17 @@ int main()
 	if(FT_Init_FreeType(&ft))
 		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
 	FT_Face face;
-	if (FT_New_Face(ft, "fonts/NotoSansKhmerUI-Thin.ttf", 0, &face))
+	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face))
 		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
-	FT_Set_Pixel_Sizes(face, 48,0);
+	FT_Set_Pixel_Sizes(face, 0,24);
 	if (FT_Load_Char(face,'D', FT_LOAD_RENDER))
 		std::cout << "ERROR::FREETYTPE: Failed to load Glyph " << std::endl;
-	Shader textShader("shader/text/vertex.vs", "shader/text/fragment.fs");
 	//FreeTypeLoad----------End
+
+	//Shader
+		Shader textShader("shader/text/vertex.vs", "shader/text/fragment.fs");
+		Shader shader("shader/2d/vertex.vs", "shader/2d/fragment.fs");
+	//Shader----------End
 
 	// render loop
 	// -----------
@@ -244,28 +316,29 @@ int main()
 	{
 		// input
 		processInput(window);
-		// input---end
+		// input----------end
 
 		// render
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glClearColor(0.6f, 0.7f, 0.8f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		// render---end
+		// render----------end
 
 
 		//Draw2D
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		Shader shader("shader/2d/vertex.vs", "shader/2d/fragment.fs");
-		draw2D(window,shader, 10, 40,100, 30);
+		draw2D(window,shader,glm::vec3(0.0f,1.0f,0.0f),10, 0,100, 30);
+
 		//DrawText
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		renderText(U"សួស្តីពិភពលោក", face, textShader,window, 100, 200);
-		//DrawText---End
+		renderText(U"Xin chào", face, window, textShader,glm::vec3(0.0f,0.0f,1.0f),SCR_WIDTH, 0+24,Align::RightAlign); //24 is textHeight(pixels) and 0 is Ytop-left
+		renderText(U"Xin chào VN", face, window, textShader,glm::vec3(1.0f,0.0f,1.0f),0, 20+24,Align::LeftAlign); //24 is textHeight(pixels) and 20 is Ytop-left
+		//DrawText----------End
 
 
-		//Draw2D---End
+		//Draw2D----------End
 
 
 
@@ -306,5 +379,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	// make sure the viewport matches the new window dimensions; note that width and 
 	// height will be significantly larger than specified on retina displays.
+	SCR_WIDTH = width;
+	SCR_HEIGHT = height;
 	glViewport(0, 0, width, height);
 }
