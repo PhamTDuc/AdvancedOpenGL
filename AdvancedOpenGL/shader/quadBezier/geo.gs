@@ -1,31 +1,45 @@
 #version 330 core
-layout (triangles) in;
-layout (line_strip, max_vertices = 20) out;
-
-vec4 quadBezier(vec4 p0, vec4 p1, vec4 p2, float t)
+layout (lines) in;
+layout (line_strip, max_vertices = 22) out;
+in VS_OUT 
 {
-	float ex_t = 1-t;
-	vec4 result=vec4(0.0f, 0.0f, 0.0f, 1.0f);
-	result.x= ex_t*ex_t*p0.x + 2*t*ex_t*p1.x + t*t*p2.x;
-	result.y= ex_t*ex_t*p0.y + 2*t*ex_t*p1.y + t*t*p2.y;
-	return result;
+	vec2 aPos;
+	vec2 lhandler;
+	vec2 rhandler;
+}vs_in[];
+
+
+uniform vec2 wDim;
+
+
+vec2 cubicBezier(vec2 p0, vec2 p1,vec2 p2,vec2 p3, float t)
+{
+	float _t = 1-t;
+	return  pow(_t,3)*p0+3*pow(_t,2)*t*p1 + 3*_t*pow(t,2)*p2 + pow(t,3)*p3;
+	
+}
+
+vec4 transform2vec4(vec2 vec)
+{
+	return vec4((2.0f*vec.x-wDim.x)/wDim.x,(-2.0f*vec.y+wDim.y)/wDim.y, 0.0f, 1.0f);
 }
 
 void main()
 {
-	const unsigned int subs = 0; //Subdivisions
+	const unsigned int subs = 20; //Subdivisions
 	float seg = 1.0f/(subs+1);
 	float t = 0.0f;
-	gl_Position = gl_in[0].gl_Position;
+	gl_Position = transform2vec4(vs_in[0].aPos);
 	EmitVertex();
 
 	for(int i=0; i<subs; ++i)
 	{
 		t+=seg;
-		gl_Position = quadBezier(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position, t);
+		gl_Position = transform2vec4(cubicBezier(vs_in[0].aPos,vs_in[0].rhandler,vs_in[1].lhandler,vs_in[1].aPos, t));
 		EmitVertex();
 	}
-	gl_Position = gl_in[2].gl_Position;
+
+	gl_Position = transform2vec4(vs_in[1].aPos);
 	EmitVertex();
 	EndPrimitive();
 }
