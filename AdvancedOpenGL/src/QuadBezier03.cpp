@@ -73,6 +73,12 @@ public:
 		glBindVertexArray(0);
 	}
 
+
+	unsigned int getVBO()
+	{
+		return VBO;
+	}
+
 	void updateBuffer()
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -135,6 +141,53 @@ public:
 		glBindVertexArray(0);
 	}
 
+};
+
+
+template<int n_sides,int radius>
+class CirclePoint
+{
+private:
+	glm::vec2 m_vertices[n_sides];
+	unsigned int VAO, VBO;
+
+public:
+	CirclePoint()
+	{
+		for (int i = 0; i < n_sides; ++i)
+		{
+			m_vertices[i].x = radius * glm::sin(2*3.14159*i/n_sides);
+			m_vertices[i].y = radius * glm::cos(2*3.14159*i/n_sides);
+			
+		}
+
+		glGenBuffers(1, &VBO);
+		glGenVertexArrays(1, &VAO);
+
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, n_sides*sizeof(glm::vec2), &m_vertices[0], GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+
+
+	void draw(Shader& shader, unsigned int buffer,int n_points,GLenum mode)
+	{
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, buffer);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glVertexAttribDivisor(1, 1);
+		
+		shader.use();
+		glDrawArraysInstanced(mode, 0, n_sides, n_points);
+		glBindVertexArray(0);
+	}
 };
 
 int main()
@@ -223,16 +276,26 @@ int main()
 		return -1;
 	}
 
-	Shader quadBezierShader("shader/quadBezier/vertex.vs", "shader/quadBezier/fragment.fs", "shader/quadBezier/geo.gs");
-	//Shader quadBezierShader("shader/quadBezier/vertex.vs", "shader/quadBezier/fragment.fs");
-	quadBezierShader.use();
-	quadBezierShader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
-	//quadBezierShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+	Shader cubicBezierShader("shader/quadBezier/vertex.vs", "shader/quadBezier/fragment.fs", "shader/quadBezier/geo.gs");
+	cubicBezierShader.use();
+	cubicBezierShader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
+	
+	Shader cubicBezierHandler("shader/quadBezier/vertex.vs", "shader/quadBezier/fragment.fs", "shader/quadBezier/geohandler.gs");
+	cubicBezierHandler.use();
+	cubicBezierHandler.setVec3("color", glm::vec3(0.0f, 1.0f, 0.0f));
+
+	Shader cubicBezierHandlerPoint("shader/quadBezier/vertex.vs", "shader/quadBezier/fragment.fs", "shader/quadBezier/geohandlerpoint.gs");
+	cubicBezierHandlerPoint.use();
+	cubicBezierHandlerPoint.setVec3("color", glm::vec3(0.0f, 0.0f, 1.0f));
+
+	Shader pointShader("shader/point/vertex.vs", "shader/quadBezier/fragment.fs");
+	pointShader.use();
+	pointShader.setVec3("color", glm::vec3(1.0f, 1.0f, 0.0f));
 
 
-	std::vector<CurvePoint> points { { {10,100},{0,10},{0,90}} ,{{200,400},{300,0},{500,90}},{{350,400},{200,100},{150,90}} };
-
+	std::vector<CurvePoint> points { { {20,100},{100,30},{200,90}} ,{{200,400},{300,0},{500,90}},{{350,400},{200,100},{150,90}} };
 	CubicCurve<CurvePoint> cubicCurve(points);
+	CirclePoint<8,5> circlePoint;
 
 
 	while(!glfwWindowShouldClose(window))
@@ -252,12 +315,27 @@ int main()
 		//Draw2D
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		quadBezierShader.use();
-		quadBezierShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		cubicBezierShader.use();
+		cubicBezierShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
 		glEnable(GL_LINE_SMOOTH);
-		glLineWidth(5);
+		glLineWidth(3);
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		cubicCurve.draw(quadBezierShader, GL_LINE_STRIP);
+		cubicCurve.draw(cubicBezierShader, GL_LINE_STRIP);
+
+		cubicBezierHandler.use();
+		cubicBezierHandler.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		glLineWidth(2);
+		cubicCurve.draw(cubicBezierHandler, GL_POINTS);
+
+		cubicBezierHandlerPoint.use();
+		cubicBezierHandlerPoint.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		glPointSize(6);
+		cubicCurve.draw(cubicBezierHandlerPoint, GL_POINTS);
+
+		pointShader.use();
+		pointShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		glLineWidth(1);
+		circlePoint.draw(pointShader, cubicCurve.getVBO(), 9, GL_LINE_LOOP);
 		//Draw2D----------End
 
 		glfwSwapBuffers(window);
