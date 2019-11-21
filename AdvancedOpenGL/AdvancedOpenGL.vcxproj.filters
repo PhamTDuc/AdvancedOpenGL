@@ -1118,9 +1118,4 @@
     <Library Include="include\freetype.lib" />
     <Library Include="include\glfw3.lib" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="shader\quadBezier\geohandler.gs" />
-    <None Include="shader\quadBezier\geohandlerpoint.gs" />
-    <None Include="shader\point\vertex.vs" />
-  </ItemGroup>
 </Project>

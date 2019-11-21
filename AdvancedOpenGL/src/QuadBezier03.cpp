@@ -148,25 +148,27 @@ template<int n_sides,int radius>
 class CirclePoint
 {
 private:
-	glm::vec2 m_vertices[n_sides];
+	glm::vec2 m_vertices[n_sides+2];
 	unsigned int VAO, VBO;
 
 public:
 	CirclePoint()
 	{
-		for (int i = 0; i < n_sides; ++i)
+		m_vertices[0] = glm::vec2();
+		for (int i = 1; i < n_sides+1; ++i)
 		{
 			m_vertices[i].x = radius * glm::sin(2*3.14159*i/n_sides);
 			m_vertices[i].y = radius * glm::cos(2*3.14159*i/n_sides);
 			
 		}
+		m_vertices[n_sides + 1] = m_vertices[1];
 
 		glGenBuffers(1, &VBO);
 		glGenVertexArrays(1, &VAO);
 
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, n_sides*sizeof(glm::vec2), &m_vertices[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, (n_sides+2)*sizeof(glm::vec2), &m_vertices[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
 
@@ -185,7 +187,7 @@ public:
 		glVertexAttribDivisor(1, 1);
 		
 		shader.use();
-		glDrawArraysInstanced(mode, 0, n_sides, n_points);
+		glDrawArraysInstanced(mode, 0, n_sides+2, n_points);
 		glBindVertexArray(0);
 	}
 };
@@ -295,7 +297,7 @@ int main()
 
 	std::vector<CurvePoint> points { { {20,100},{100,30},{200,90}} ,{{200,400},{300,0},{500,90}},{{350,400},{200,100},{150,90}} };
 	CubicCurve<CurvePoint> cubicCurve(points);
-	CirclePoint<8,5> circlePoint;
+	CirclePoint<8,8> circlePoint;
 
 
 	while(!glfwWindowShouldClose(window))
@@ -334,8 +336,8 @@ int main()
 
 		pointShader.use();
 		pointShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
-		glLineWidth(1);
-		circlePoint.draw(pointShader, cubicCurve.getVBO(), 9, GL_LINE_LOOP);
+		//glLineWidth(1);
+		circlePoint.draw(pointShader, cubicCurve.getVBO(), 9, GL_TRIANGLE_FAN);
 		//Draw2D----------End
 
 		glfwSwapBuffers(window);
