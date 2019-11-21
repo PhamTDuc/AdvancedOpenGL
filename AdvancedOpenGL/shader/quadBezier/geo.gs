@@ -26,7 +26,7 @@ vec4 transform2vec4(vec2 vec)
 
 void main()
 {
-	const unsigned int subs = 20; //Subdivisions
+	int subs = 20; //Subdivisions
 	float seg = 1.0f/(subs+1);
 	float t = 0.0f;
 	gl_Position = transform2vec4(vs_in[0].aPos);

@@ -1101,6 +1101,7 @@
     <ClInclude Include="include\glm\vector_relational.hpp">
       <Filter>include\glm</Filter>
     </ClInclude>
+    <ClInclude Include="include\sigslot\signal.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">
@@ -1109,18 +1110,11 @@
     <ClCompile Include="include\glm\detail\glm.cpp">
       <Filter>include\glm\detail</Filter>
     </ClCompile>
-    <ClCompile Include="src\QuadBezier03.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="include\glad.c" />
+    <ClCompile Include="src\Overlay02.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />
     <Library Include="include\glfw3.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shader\quadBezier\geohandler.gs" />
-    <None Include="shader\quadBezier\geohandlerpoint.gs" />
-    <None Include="shader\point\vertex.vs" />
   </ItemGroup>
 </Project>

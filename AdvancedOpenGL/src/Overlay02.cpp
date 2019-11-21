@@ -9,55 +9,218 @@
 #include "freetype/freetype.h"
 #include "Shader.h"
 #include <iostream>
-#include <array>
-#include <map>
+#include <string_view>
+#include <forward_list>
 
 // settings
 static unsigned int SCR_WIDTH = 800;
 static unsigned int SCR_HEIGHT = 600;
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void window_refresh_callback(GLFWwindow* window);
+void draw2D(Shader& shader, const glm::vec3& color , int x, int  y , unsigned int w, unsigned int h);
+struct CoreMouse;
+
+struct Button
+{
+	int x_m, y_m, w_m, h_m;
+	bool isdragging = false;
+	Shader* shader = nullptr;
+	void draw(const glm::vec3& color, const int &diffX = 0, const int &diffY = 0)
+	{
+		if (shader)
+		{
+			if (isdragging)
+				draw2D(*shader, color, x_m + diffX, y_m + diffY, w_m, h_m);
+			else
+			{
+				draw2D(*shader, color, x_m, y_m, w_m, h_m);
+			}
+		}
+
+	}
+
+
+	void update(const int& diffX, const int& diffY)
+	{
+		x_m += diffX;
+		y_m += diffY;
+	}
+};
+
+struct Widget
+{
+	int x_m, y_m, w_m, h_m;
+	Widget* parent = nullptr;
+	std::forward_list<Widget*> children;
+
+	Widget(int x=0,int y=0, int w=0, int h=0,Widget* pa=nullptr):x_m(x),y_m(y),w_m(w),h_m(h),parent(pa){}
+	virtual void onDragCallback(GLFWwindow*, double,double,double, double){}
+	virtual void onClick(){}
+	virtual void onDropCallback(){}
+};
+
+struct DragOBJ :public Widget
+{
+	//static Shader* shader_s;
+	//bool draggable = true;
+	//double tempX, tempY;
+	DragOBJ(int x = 0, int y = 0, int w = 0, int h = 0, Widget* pa = nullptr): Widget(x,y,w,h,pa)
+	{
+		if (pa)
+			pa->children.push_front(this);
+		//tempX = x;
+		//tempY = y;
+	}
+	void draw(Shader& shader,const glm::vec3& color)
+	{
+		draw2D(shader, color, x_m, y_m, w_m, h_m);
+	}
+	
+	virtual void onDragCallback(GLFWwindow* window,double tempX, double tempY,double diffX, double diffY) override
+	{
+		x_m = tempX + diffX;
+		y_m = tempY + diffY;
+	}
+
+	virtual void onDropCallback() 
+	{
+		//x_m = tempX + diffX;
+		//y_m = tempY + diffY;
+	}
+
+	virtual void onClick()
+	{
+		//y_m += 50;
+		//tempY += 50;
+	}
+};
 
 //The Origin Coordinates of XY is Top-Left of the screen (0,0) 
 //The Origin Coordinates of XY is Top-Left of the screen (0,0) 
+Button button{ 100,200,200,80 };
 struct CoreMouse
 {
 	double x, y; //Current Mouse Position
 	double firstX, firstY; //First Pressed Occured
+	double diffX, diffY;
+	double tempX, tempY;
 	bool leftB, midB, rightB;
-	friend std::ostream& operator<<(std::ostream& out, const CoreMouse& mouse)
+	enum STATUS
 	{
-		out << "First" << mouse.firstX << " " << mouse.firstY << " L" << mouse.leftB << " R" << mouse.rightB << " M" << mouse.midB << " Current " << mouse.x << " " << mouse.y << "\n";
-		return out;
+		FREE_STATUS = 0,
+		PROCESS_STATUS,
+	};
+	enum STATE
+	{
+		FIRST_STATE = 0,
+		SECOND_STATE
+
+	};
+
+	Widget* active = nullptr;
+	STATUS status = FREE_STATUS;
+	STATE state = FIRST_STATE;
+
+	bool isOver(const Button& button)
+	{
+		if (button.x_m  < x && x < (button.x_m + button.w_m ) && button.y_m < y && y < (button.y_m + button.h_m))
+			return true;
+		return false;
+	}
+
+	//void process()
+	//{
+	//	if (isOver(button) && leftB)
+	//	{
+	//		//button.update(x - firstX, y - firstY);
+	//		//button.draw(glm::vec3(0.0f, 0.0f, 1.0f));
+	//		button.isdragging = true;
+	//	}
+	//	
+	//	//dragging = leftB && dragged;
+	//	if (button.isdragging && !leftB)
+	//	{
+	//		button.update(x - firstX, y - firstY);
+	//		button.isdragging = false;
+	//	}
+	//}
+	
+	Widget* tranversalPostOrder(Widget* node = nullptr, GLFWwindow* window = nullptr)
+	{
+		if (status == FREE_STATUS && node)
+		{
+			for (Widget* child : node->children)
+			{
+				tranversalPostOrder(child);
+			}
+
+			if (node->x_m < x && x < (node->x_m + node->w_m) && node->y_m < y && y < (node->y_m + node->h_m))
+			{
+				//std::cout << "Hello" << node << std::endl;
+				if (leftB)
+				{
+					status = PROCESS_STATUS;
+					active = node;
+				}
+			}
+		}
+		if (status == PROCESS_STATUS )
+		{
+			//std::cout << active;
+			if (leftB)
+			{
+				double diffX = x - firstX;
+				double diffY = y - firstY;
+				if (diffX || diffY){}
+					//std::cout << diffX << "   " << diffY<<'\n';
+				{
+					if (state==FIRST_STATE)
+					{
+						tempX = node->x_m;
+						tempY = node->y_m;
+						state = SECOND_STATE;
+						//std::cout << tempX << "  " << tempY;
+					}
+					active->onDragCallback(window,tempX,tempY, diffX, diffY);	
+				}
+			}else
+			{
+				//if (status == PROCESS_STATUS)
+				//active->onClick();
+				//else if(status ==PROCESSING)
+				active->onDropCallback();
+				active = nullptr;
+				status = FREE_STATUS;
+				state = FIRST_STATE;
+			}
+			//std::cout << active;
+			//return active;
+		}
+		
+		return nullptr;
 	}
 };
+
 static CoreMouse mouse;
-
-struct Character
-{
-	GLuint texture2D;
-	glm::ivec2 size;
-	glm::ivec2 bearing;
-	FT_Pos advance;
-};
-
 enum class Align
 { LeftAlign=0, 
   RightAlign,
 };
 
-void draw2D(GLFWwindow* window,Shader &shader, const glm::vec3 color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0,unsigned int  y=0, unsigned int w=100,unsigned int h=20)
+void draw2D(Shader &shader, const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f), int x=0, int  y=0, unsigned int w=100,unsigned int h=20)
 //X,Y is Top-Left coordinates in pixels
 {
 	shader.use();
 	shader.setVec3("color", color);
 	shader.setVec2("wDim", SCR_WIDTH,SCR_HEIGHT);
+	shader.setVec2("transform", glm::vec2(x, y));
 	float vertices[] =
 	{
-		x, y,
-		x + w, y,
-		x, y + h,
-		x + w, y + h,
+		0, 0,
+		w, 0,
+		0, h,
+		w, h,
 	};
 	
 	unsigned int VAO, VBO;
@@ -79,14 +242,25 @@ void draw2D(GLFWwindow* window,Shader &shader, const glm::vec3 color= glm::vec3(
 	glBindVertexArray(0);
 }
 
-void renderText(const std::u32string& str,const FT_Face &face, GLFWwindow* window, Shader& shader,const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0, unsigned int y=0,Align align=Align::LeftAlign)
+
+void renderText(std::u32string_view str,const FT_Face &face, GLFWwindow* window, Shader& shader,const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0, unsigned int y=0,Align align=Align::LeftAlign)
 //X,Y is Bottom-Left coordinates in pixels
 //Y = Ytop-left  + textHeight(pixels)
 {
 	float scale = 0.5;
-	GLuint texture;
+	static GLuint texture;
 	glGenTextures(1, &texture);
-	FT_GlyphSlot slot = face->glyph;
+	static FT_GlyphSlot slot = face->glyph;
+	// Set texture options
+	glBindTexture(GL_TEXTURE_2D, texture);	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glActiveTexture(GL_TEXTURE0);
+	shader.use();
+	shader.setVec3("color", color);
+	shader.setInt("text", 0);
 
 	switch (align)
 	{
@@ -99,18 +273,7 @@ void renderText(const std::u32string& str,const FT_Face &face, GLFWwindow* windo
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, slot->bitmap.width, slot->bitmap.rows, 0,
 				GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer
 			);
-			// Set texture options
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, texture);
-
-			shader.use();
-			shader.setVec3("color", color);
 			shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
-			shader.setInt("text", 0);
 
 			unsigned int w = slot->bitmap.width, h = slot->bitmap.rows;
 			float bearX = slot->bitmap_left;
@@ -152,14 +315,6 @@ void renderText(const std::u32string& str,const FT_Face &face, GLFWwindow* windo
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, slot->bitmap.width, slot->bitmap.rows, 0,
 				GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer
 			);
-			// Set texture options
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, texture);
-
 			shader.use();
 			shader.setVec3("color", color);
 			shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
@@ -212,6 +367,8 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+	//glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
@@ -219,68 +376,104 @@ int main()
 
 	// glfw window creation
 	// --------------------
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-	if (window == NULL)
+	
+	GLFWwindow* window1= glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	if (window1 == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
 	}
+	//GLFWwindow* window2 = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "SecondWindow", NULL, window1);
+	//if (window2 == NULL)
+	//{
+	//	std::cout << "Failed to create GLFW window" << std::endl;
+	//	glfwTerminate();
+	//	return -1;
+	//}
+
+
+	GLFWwindow* window = window1;
 	glfwMakeContextCurrent(window);
+
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetWindowRefreshCallback(window1, nullptr);
 
 	glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x, double y)
 	{
 		//std::cout << "Xpos: " << x << "  Ypos: " << y << "\n";
 		mouse.x = x;
 		mouse.y = y;
-		std::cout << mouse;
+		//mouse.diffX = x - mouse.firstX;
+		//mouse.diffY = y - mouse.firstY;
+		//std::cout << mouse.diffX<<"\n";
+
+		//std::cout << mouse.diffX<<std::endl;
+		//mouse.active();
+		//std::cout << mouse.x << " " << mouse.y<<"    "<<mouse.diffX<<" "<<mouse.diffY<<"\n";
 	});
 
 	glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods)
 
-	{	double xPos, yPos;
-	glfwGetCursorPos(window, &xPos, &yPos);
-	//std::cout << "X" << xPos << " Y" << yPos;
-	if (action == GLFW_PRESS)
 	{
-		if (!(mouse.leftB || mouse.rightB || mouse.midB))
+		
+	////std::cout << "X" << xPos << " Y" << yPos;
+	//if (action == GLFW_PRESS)
+	//{
+	//	if (!(mouse.leftB || mouse.rightB || mouse.midB))
+	//	{
+	//		//mouse.firstX = xPos;
+	//		//mouse.firstY = yPos;
+	//		//mouse.leftB = true;
+	//		glfwGetCursorPos(window, &mouse.firstX, &mouse.firstY);
+	//	}
+	//	//std::cout << " Mouse button: " << button << " pressed\n";
+	//	switch (button)
+	//	{
+	//	case GLFW_MOUSE_BUTTON_LEFT:
+	//		mouse.leftB = true;
+	//		break;
+	//	case GLFW_MOUSE_BUTTON_RIGHT:
+	//		mouse.rightB = true;
+	//		break;
+	//	case GLFW_MOUSE_BUTTON_MIDDLE:
+	//		mouse.midB = true;
+	//		break;
+	//	}
+
+	//}
+	//else
+	//{
+	//	switch (button)
+	//	{
+	//	case GLFW_MOUSE_BUTTON_LEFT:
+	//		mouse.leftB = false;
+	//		break;
+	//	case GLFW_MOUSE_BUTTON_RIGHT:
+	//		mouse.rightB = false;
+	//		break;
+	//	case GLFW_MOUSE_BUTTON_MIDDLE:
+	//		mouse.midB = false;
+	//		break;
+	//	}
+	//	//std::cout << " Mouse button: " << button << " released\n";
+	//	//mouse.leftB = false;
+	//	//mouse.active();
+	//}
+		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT && !mouse.leftB)
 		{
-			mouse.firstX = xPos;
-			mouse.firstY = yPos;
-		}
-		//std::cout << " Mouse button: " << button << " pressed\n";
-		switch (button)
-		{
-		case GLFW_MOUSE_BUTTON_LEFT:
+			glfwGetCursorPos(window, &mouse.firstX, &mouse.firstY);
 			mouse.leftB = true;
-			break;
-		case GLFW_MOUSE_BUTTON_RIGHT:
-			mouse.rightB = true;
-			break;
-		case GLFW_MOUSE_BUTTON_MIDDLE:
-			mouse.midB = true;
-			break;
 		}
 
-	}
-	else
-	{
-		switch (button)
+		if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-		case GLFW_MOUSE_BUTTON_LEFT:
 			mouse.leftB = false;
-			break;
-		case GLFW_MOUSE_BUTTON_RIGHT:
-			mouse.rightB = false;
-			break;
-		case GLFW_MOUSE_BUTTON_MIDDLE:
-			mouse.midB = false;
-			break;
 		}
-		//std::cout << " Mouse button: " << button << " released\n";
-	}
-	std::cout << mouse;
+
+
+
+
 	});
 
 	
@@ -308,14 +501,30 @@ int main()
 	//Shader
 		Shader textShader("shader/text/vertex.vs", "shader/text/fragment.fs");
 		Shader shader("shader/2d/vertex.vs", "shader/2d/fragment.fs");
+		button.shader = &shader;
 	//Shader----------End
+
+	//SetupWidget
+		Widget root{};
+		DragOBJ drag1{30,30,100,20,&root};
+		DragOBJ drag2{30,60,110,25,&root};
+		DragOBJ drag3{30,90,100,20,&root};
+
+		std::cout << root.children.front();
+
 
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))
 	{
 		// input
+		glfwPollEvents();
 		processInput(window);
+		//mouse.process();
+		mouse.tranversalPostOrder(&root, window);
+
+
+
 		// input----------end
 
 		// render
@@ -329,12 +538,23 @@ int main()
 		//Draw2D
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		draw2D(window,shader,glm::vec3(0.0f,1.0f,0.0f),10, 0,100, 30);
+		//if (button.isdragging && !mouse.leftB)
+		//{
+		//	button.update(mouse.x - mouse.firstX, mouse.y - mouse.firstY);
+		//	button.isdragging = false;
+		//}
+
+		button.draw(glm::vec3(0.0f, 0.5f, 1.0f),mouse.x-mouse.firstX,mouse.y-mouse.firstY);
+		draw2D(shader,glm::vec3(0.0f,1.0f,0.0f),10, 0,100, 30);
+		drag1.draw(shader,glm::vec3(0.5f, 0.5f, 1.0f));
+		drag2.draw(shader,glm::vec3(1.0f, 0.5f, 1.0f));
+		drag3.draw(shader,glm::vec3(0.5f, 1.0f, 1.0f));
+		//std::cout << drag1.x_m<<std::endl;
 
 		//DrawText
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		renderText(U"Xin chào", face, window, textShader,glm::vec3(0.0f,0.0f,1.0f),SCR_WIDTH, 0+24,Align::RightAlign); //24 is textHeight(pixels) and 0 is Ytop-left
-		renderText(U"Xin chào VN", face, window, textShader,glm::vec3(1.0f,0.0f,1.0f),0, 20+24,Align::LeftAlign); //24 is textHeight(pixels) and 20 is Ytop-left
+		//renderText(U"Xin chào các bạn VN", face, window, textShader,glm::vec3(0.0f,0.0f,1.0f),SCR_WIDTH, 0+24,Align::RightAlign); //24 is textHeight(pixels) and 0 is Ytop-left
+		//renderText(U"Xin chào VN", face, window, textShader,glm::vec3(1.0f,0.0f,1.0f),0, 20+24,Align::LeftAlign); //24 is textHeight(pixels) and 20 is Ytop-left
 		//DrawText----------End
 
 
@@ -354,7 +574,7 @@ int main()
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
-		glfwPollEvents();
+		glfwSwapInterval(1);
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
