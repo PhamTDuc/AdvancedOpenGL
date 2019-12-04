@@ -243,7 +243,7 @@ void draw2D(Shader &shader, const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f),
 }
 
 
-void renderText(std::u32string_view str,const FT_Face &face, GLFWwindow* window, Shader& shader,const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0, unsigned int y=0,Align align=Align::LeftAlign)
+void renderText(const std::u32string_view &str,const FT_Face &face, GLFWwindow* window, Shader& shader,const glm::vec3& color= glm::vec3(1.0f, 0.0f, 0.0f),unsigned int x=0, unsigned int y=0,Align align=Align::LeftAlign)
 //X,Y is Bottom-Left coordinates in pixels
 //Y = Ytop-left  + textHeight(pixels)
 {
@@ -518,11 +518,11 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		// input
-		glfwPollEvents();
+		//glfwPollEvents();
+		glfwWaitEvents();
 		processInput(window);
 		//mouse.process();
 		mouse.tranversalPostOrder(&root, window);
-
 
 
 		// input----------end

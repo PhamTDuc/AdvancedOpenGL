@@ -38,7 +38,7 @@ project "AdvancedOpenGL"
     }
 
     filter "system:windows"
-        cppdialect "C++14"
+        cppdialect "C++17"
         systemversion "10.0.17763.0"
         -- postbuildcommands
         -- {
@@ -50,7 +50,7 @@ project "AdvancedOpenGL"
         symbols "On"
         links
         {
-            "msvcmrt.lib",
+            "msvcrtd.lib",
         }
 
     filter "configurations:Release"
