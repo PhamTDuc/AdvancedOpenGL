@@ -53,6 +53,7 @@ struct Widget
 	int x_m, y_m, w_m, h_m;
 	Widget* parent = nullptr;
 	std::forward_list<Widget*> children;
+	bool contextMenu = false;
 
 	Widget(int x=0,int y=0, int w=0, int h=0,Widget* pa=nullptr):x_m(x),y_m(y),w_m(w),h_m(h),parent(pa){}
 	virtual void onDragCallback(GLFWwindow*, double,double,double, double){}
@@ -110,6 +111,7 @@ struct CoreMouse
 	{
 		FREE_STATUS = 0,
 		PROCESS_STATUS,
+		PROCESS_CONTEXT
 	};
 	enum STATE
 	{
@@ -163,7 +165,13 @@ struct CoreMouse
 					status = PROCESS_STATUS;
 					active = node;
 				}
+				if (node->contextMenu && rightB)
+				{
+					status = PROCESS_CONTEXT;
+					active = node;
+				}
 			}
+		
 		}
 		if (status == PROCESS_STATUS )
 		{
@@ -200,6 +208,8 @@ struct CoreMouse
 		
 		return nullptr;
 	}
+
+
 };
 
 static CoreMouse mouse;
@@ -510,7 +520,7 @@ int main()
 		DragOBJ drag2{30,60,110,25,&root};
 		DragOBJ drag3{30,90,100,20,&root};
 
-		std::cout << root.children.front();
+		//std::cout << root.children.front();
 
 
 	// render loop

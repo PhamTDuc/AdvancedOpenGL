@@ -52,6 +52,9 @@
     <Filter Include="include\glm\out\build\x64-Debug\CMakeFiles\ShowIncludes">
       <UniqueIdentifier>{AD0420A9-19EC-0A9F-22DA-0C1B8E40AE61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\sigslot">
+      <UniqueIdentifier>{3DF803CD-A983-7191-B294-F4851E9FCD91}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
@@ -1101,7 +1104,10 @@
     <ClInclude Include="include\glm\vector_relational.hpp">
       <Filter>include\glm</Filter>
     </ClInclude>
-    <ClInclude Include="include\sigslot\signal.hpp" />
+    <ClInclude Include="include\sigslot\signal.hpp">
+      <Filter>include\sigslot</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Widget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">
@@ -1111,10 +1117,15 @@
       <Filter>include\glm\detail</Filter>
     </ClCompile>
     <ClCompile Include="include\glad.c" />
-    <ClCompile Include="src\Overlay02.cpp" />
+    <ClCompile Include="src\IOSingleton04.cpp" />
+    <ClCompile Include="include\Widget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />
     <Library Include="include\glfw3.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\button\vertex.vs" />
+    <None Include="shader\button\fragment.fs" />
   </ItemGroup>
 </Project>
