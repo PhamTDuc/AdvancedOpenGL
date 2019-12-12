@@ -10,6 +10,7 @@
 #include "Shader.h"
 #include <iostream>
 #include <vector>
+#include <map>
 
 // settings
 static unsigned int SCR_WIDTH = 800;
@@ -33,6 +34,17 @@ struct CoreMouse
 static CoreMouse mouse;
 
 //FreeTypeLoad
+
+struct Character
+{
+	glm::ivec2 pos;
+	glm::ivec2 bearing;
+	unsigned int advanced;
+};
+
+std::map<char32_t, Character> Atlas;
+
+
 unsigned int generateFont(std::u32string_view string, unsigned int text_size = 20)
 {
 
@@ -62,17 +74,85 @@ unsigned int generateFont(std::u32string_view string, unsigned int text_size = 2
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, text_size * dims , text_size * dims, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+	Character ch;
 
 	
 	for (std::uint32_t i = 0; i < string.size();++i)
 	{
 		if (FT_Load_Char(face, string[i], FT_LOAD_RENDER))
 			std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
-		glTexSubImage2D(GL_TEXTURE_2D, 0, text_size * glm::mod((float)i, (float)dims) , text_size * (i / dims), slot->bitmap.width, slot->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer);
+		else
+		{
+			ch.pos.x = glm::mod((float)i, (float)dims);
+			ch.pos.y = i / dims;
+			ch.bearing = glm::ivec2(slot->bitmap_left, slot->bitmap_top);
+			ch.advanced = slot->advance.x >> 6;
+			glTexSubImage2D(GL_TEXTURE_2D, 0, text_size * ch.pos.x, text_size * ch.pos.y, slot->bitmap.width, slot->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer);
+			Atlas.emplace(string[i], ch);
+		}
 	}
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return texture;
+}
+
+void renderText(std::u32string_view string, unsigned int texture, Shader &shader, float scale=2, unsigned int x = 0, unsigned y =0)
+{
+	unsigned int VAO, VBO;
+	glGenBuffers(1, &VBO);
+	glGenVertexArrays(1, &VAO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 16 , nullptr, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GL_FLOAT), 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	shader.use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	shader.setInt("text", 0);
+
+	float step = 0.99f / 6.0f;
+	unsigned int size = 20;
+	int x_run = x,y_run = y;
+	for (auto& ch : string)
+	{
+		if (ch == '\n')
+		{
+			x_run = x;
+			y_run += size*scale;
+		}
+		else
+		{
+			if (Atlas.find(ch) != Atlas.end())
+			{
+				//std::cout << Atlas[ch].advanced;
+				int xPos = x_run + Atlas[ch].bearing.x*scale;
+				int yPos = y_run + size - Atlas[ch].bearing.y*scale;
+
+				float vertices[] = {
+					xPos, yPos, Atlas[ch].pos.x * step, Atlas[ch].pos.y * step,
+					xPos + size*scale, yPos, (Atlas[ch].pos.x + 1.0f) * step, Atlas[ch].pos.y * step,
+					xPos, yPos + size*scale, Atlas[ch].pos.x * step, (Atlas[ch].pos.y + 1.0f) * step,
+					xPos + size*scale, yPos + size*scale, (Atlas[ch].pos.x + 1.0f) * step, (Atlas[ch].pos.y + 1.0f) * step
+				};
+
+				glBindVertexArray(VAO);
+				glBindBuffer(GL_ARRAY_BUFFER, VBO);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			}
+			x_run += Atlas[ch].advanced*scale;
+		}
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 int main()
@@ -169,31 +249,32 @@ int main()
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-	float step = 0.985f / 4.0f;
-	glm::vec2 pos(3, 2);
-	float vertices[] = {
-		10.0f, 10.0f, pos.x * step, pos.y * step,
-		60.0f, 10.0f, (pos.x + 1.0f) * step, pos.y * step,
-		10.0f, 60.0f, pos.x * step, (pos.y + 1.0f) * step,
-		60.0f, 60.0f, (pos.x + 1.0f) * step, (pos.y + 1.0f)*step
-	};
-
+	//float step = 0.985f / 4.0f;
+	//glm::vec2 pos(3, 2);
 	//float vertices[] = {
-	//10.0f, 10.0f, 0.0f, 0.0f,
-	//160.0f, 10.0f, 1.0f , 0.0f,
-	//10.0f, 160.0f, 0.0f, 1.0f,
-	//160.0f, 160.0f, 1.0f, 1.0f
+	//	10.0f, 10.0f, pos.x * step, pos.y * step,
+	//	40.0f, 10.0f, (pos.x + 1.0f) * step, pos.y * step,
+	//	10.0f, 40.0f, pos.x * step, (pos.y + 1.0f) * step,
+	//	40.0f, 40.0f, (pos.x + 1.0f) * step, (pos.y + 1.0f)*step
 	//};
 
+	////float vertices[] = {
+	////10.0f, 10.0f, 0.0f, 0.0f,
+	////160.0f, 10.0f, 1.0f , 0.0f,
+	////10.0f, 160.0f, 0.0f, 1.0f,
+	////160.0f, 160.0f, 1.0f, 1.0f
+	////};
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GL_FLOAT), 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
 
-	unsigned int texture = generateFont(U"aăâgcdđeêfOÔ");
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+	//glEnableVertexAttribArray(0);
+	//glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GL_FLOAT), 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindVertexArray(0);
 
+	unsigned int texture = generateFont(U"\u25a1aăâgcdđeêfghiklmnouABCDEMHpậà ");
+
+	
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -214,12 +295,13 @@ int main()
 		glDisable(GL_CULL_FACE);
 		shader.use();
 		shader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-		shader.setVec3("color", glm::vec3(0.5f,0.0f,0.0f));
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		shader.setInt("text", 0);
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		shader.setVec3("color", glm::vec3(0.5f,0.5f,0.0f));
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, texture);
+		//shader.setInt("text", 0);
+		//glBindVertexArray(VAO);
+		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		renderText(U"hello chào \nHello", texture, shader,1.8,40,100);
 		//Draw2D----------End
 
 		glfwSwapBuffers(window);
