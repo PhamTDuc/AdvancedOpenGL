@@ -452,7 +452,7 @@
     <ClCompile Include="include\Shader.cpp" />
     <ClCompile Include="include\glm\detail\glm.cpp" />
     <ClCompile Include="include\Widget.cpp" />
-    <ClCompile Include="src\IOSingleton04.cpp" />
+    <ClCompile Include="src\FastTextRender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />
