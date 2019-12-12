@@ -97,6 +97,9 @@ unsigned int generateFont(std::u32string_view string, unsigned int text_size = 2
 	return texture;
 }
 
+
+//RenderText and return VHBOX of text
+//RenderText and return VHBOX of text
 void renderText(std::u32string_view string, unsigned int texture, Shader &shader, float scale=2, unsigned int x = 0, unsigned y =0)
 {
 	unsigned int VAO, VBO;
@@ -117,7 +120,7 @@ void renderText(std::u32string_view string, unsigned int texture, Shader &shader
 	glBindTexture(GL_TEXTURE_2D, texture);
 	shader.setInt("text", 0);
 
-	float step = 0.99f / 6.0f;
+	float step = 0.995f / 6.0f;
 	unsigned int size = 20;
 	int x_run = x,y_run = y;
 	for (auto& ch : string)
@@ -152,6 +155,66 @@ void renderText(std::u32string_view string, unsigned int texture, Shader &shader
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+glm::uvec2 getVHbox(std::u32string_view string, float scale = 2)
+{
+
+
+	float step = 0.995f / 6.0f;
+	unsigned int size = 20;
+	unsigned int w = 0, h = 0;
+	int x_run = 0, y_run = 0;
+	for (auto& ch : string)
+	{
+		if (ch == '\n')
+		{
+			w = w < x_run ? x_run : w;
+			y_run += size * scale;
+			x_run = 0;
+		}
+		else
+		{
+			x_run += Atlas[ch].advanced * scale;
+		}
+	}
+	w = w < x_run ? x_run : w;
+	h = y_run + size * scale;
+	return glm::uvec2(w, h);
+}
+
+void draw2D(Shader& shader, const glm::vec3& color = glm::vec3(1.0f, 0.0f, 0.0f), int x = 0, int  y = 0, unsigned int w = 100, unsigned int h = 20)
+//X,Y is Top-Left coordinates in pixels
+{
+	shader.use();
+	shader.setVec3("color", color);
+	shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+	shader.setVec2("transform", glm::vec2(x, y));
+	float vertices[] =
+	{
+		0, 0,
+		w, 0,
+		0, h,
+		w, h,
+	};
+
+	unsigned int VAO, VBO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// position attribute
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
 }
 
@@ -241,7 +304,6 @@ int main()
 		return -1;
 	}
 
-	Shader shader("shader/text/vertex.vs","shader/text/fragment.fs");
 	unsigned int VAO, VBO;
 	glGenBuffers(1, &VBO);
 	glGenVertexArrays(1, &VAO);
@@ -272,8 +334,9 @@ int main()
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	//glBindVertexArray(0);
 
-	unsigned int texture = generateFont(U"\u25a1aăâgcdđeêfghiklmnouABCDEMHpậà ");
-
+	unsigned int texture = generateFont(U"\u25a1aăâgcdđeêfghiklmnouABCDEMHpậàwrtếớ ");
+	Shader textshader("shader/text/vertex.vs","shader/text/fragment.fs");
+	Shader shader("shader/2d/vertex.vs", "shader/2d/fragment.fs");
 	
 
 	while (!glfwWindowShouldClose(window))
@@ -293,15 +356,18 @@ int main()
 		//Draw2D
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
-		shader.use();
-		shader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-		shader.setVec3("color", glm::vec3(0.5f,0.5f,0.0f));
+		textshader.use();
+		textshader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+		textshader.setVec3("color", glm::vec3(0.5f,0.5f,1.0f));
 		//glActiveTexture(GL_TEXTURE0);
 		//glBindTexture(GL_TEXTURE_2D, texture);
 		//shader.setInt("text", 0);
 		//glBindVertexArray(VAO);
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		renderText(U"hello chào \nHello", texture, shader,1.8,40,100);
+		glm::uvec2 vh=getVHbox(U"Hello thế giới\nhello the world", 1.5);
+		draw2D(shader, glm::vec3(1.0f, 0.5f, 0.0f), 10, 100, vh.x, vh.y);
+		renderText(U"Hello thế giới\nhello the world", texture, textshader, 1.5, 10, 110);
+		//std::cout << vh.x<<"  "<<vh.y<<'\n';
 		//Draw2D----------End
 
 		glfwSwapBuffers(window);
