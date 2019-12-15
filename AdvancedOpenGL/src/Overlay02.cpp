@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string_view>
 #include <forward_list>
+#include <map>
 
 // settings
 static unsigned int SCR_WIDTH = 800;
@@ -368,6 +369,155 @@ void renderText(const std::u32string_view &str,const FT_Face &face, GLFWwindow* 
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+struct Character
+{
+	glm::ivec2 pos;
+	glm::ivec2 bearing;
+	unsigned int advanced;
+};
+
+std::map<char32_t, Character> Atlas;
+
+
+unsigned int generateFont(std::u32string_view string, unsigned int text_size = 20)
+{
+
+	FT_Library ft;
+	if (FT_Init_FreeType(&ft))
+		std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+	FT_Face face;
+	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &face))
+		std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+	FT_Set_Pixel_Sizes(face, text_size, 0);
+	if (FT_Load_Char(face, 'D', FT_LOAD_RENDER))
+		std::cout << "ERROR::FREETYTPE: Failed to load Glyph " << std::endl;
+	//FreeTypeLoad----------End
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	FT_GlyphSlot slot = face->glyph;
+	if (FT_Load_Char(face, 'A', FT_LOAD_RENDER))
+		std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
+
+	std::uint16_t dims = glm::ceil(glm::sqrt((float)string.size()));
+
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, text_size * dims, text_size * dims, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+	Character ch;
+
+
+	for (std::uint32_t i = 0; i < string.size(); ++i)
+	{
+		if (FT_Load_Char(face, string[i], FT_LOAD_RENDER))
+			std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
+		else
+		{
+			ch.pos.x = glm::mod((float)i, (float)dims);
+			ch.pos.y = i / dims;
+			ch.bearing = glm::ivec2(slot->bitmap_left, slot->bitmap_top);
+			ch.advanced = slot->advance.x >> 6;
+			glTexSubImage2D(GL_TEXTURE_2D, 0, text_size * ch.pos.x, text_size * ch.pos.y, slot->bitmap.width, slot->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer);
+			Atlas.emplace(string[i], ch);
+		}
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return texture;
+}
+
+
+//RenderText and return VHBOX of text
+//RenderText and return VHBOX of text
+void renderText(std::u32string_view string, unsigned int texture, Shader& shader, float scale = 2, unsigned int x = 0, unsigned y = 0)
+{
+	unsigned int VAO, VBO;
+	glGenBuffers(1, &VBO);
+	glGenVertexArrays(1, &VAO);
+
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 16, nullptr, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GL_FLOAT), 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	shader.use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	shader.setInt("text", 0);
+
+	float step = 0.995f / 6.0f;
+	unsigned int size = 20;
+	int x_run = x, y_run = y;
+	for (auto& ch : string)
+	{
+		if (ch == '\n')
+		{
+			x_run = x;
+			y_run += size * scale;
+		}
+		else
+		{
+			if (Atlas.find(ch) != Atlas.end())
+			{
+				//std::cout << Atlas[ch].advanced;
+				int xPos = x_run + Atlas[ch].bearing.x * scale;
+				int yPos = y_run + size*scale - Atlas[ch].bearing.y * scale;
+
+				float vertices[] = {
+					xPos, yPos, Atlas[ch].pos.x * step, Atlas[ch].pos.y * step,
+					xPos + size * scale, yPos, (Atlas[ch].pos.x + 1.0f) * step, Atlas[ch].pos.y * step,
+					xPos, yPos + size * scale, Atlas[ch].pos.x * step, (Atlas[ch].pos.y + 1.0f) * step,
+					xPos + size * scale, yPos + size * scale, (Atlas[ch].pos.x + 1.0f) * step, (Atlas[ch].pos.y + 1.0f) * step
+				};
+
+				glBindVertexArray(VAO);
+				glBindBuffer(GL_ARRAY_BUFFER, VBO);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), &vertices);
+				glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			}
+			x_run += Atlas[ch].advanced * scale;
+		}
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+
+glm::uvec2 getVHbox(std::u32string_view string, float scale = 2)
+{
+
+
+	float step = 0.995f / 6.0f;
+	unsigned int size = 20;
+	unsigned int w = 0, h = 0;
+	int x_run = 0, y_run = 0;
+	for (auto& ch : string)
+	{
+		if (ch == '\n')
+		{
+			w = w < x_run ? x_run : w;
+			y_run += size * scale;
+			x_run = 0;
+		}
+		else
+		{
+			x_run += Atlas[ch].advanced * scale;
+		}
+	}
+	w = w < x_run ? x_run : w;
+	h = y_run + size * scale;
+	return glm::uvec2(w, h);
+}
 
 int main()
 {
@@ -523,6 +673,7 @@ int main()
 		//std::cout << root.children.front();
 
 
+	unsigned int texture = generateFont(U"\u25a1aăâgcdđeêfghiklmnouABCwEMHpậàẤrtớX ");
 	// render loop
 	// -----------
 	while (!glfwWindowShouldClose(window))
@@ -565,6 +716,14 @@ int main()
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		//renderText(U"Xin chào các bạn VN", face, window, textShader,glm::vec3(0.0f,0.0f,1.0f),SCR_WIDTH, 0+24,Align::RightAlign); //24 is textHeight(pixels) and 0 is Ytop-left
 		//renderText(U"Xin chào VN", face, window, textShader,glm::vec3(1.0f,0.0f,1.0f),0, 20+24,Align::LeftAlign); //24 is textHeight(pixels) and 20 is Ytop-left
+		textShader.use();
+		textShader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+		textShader.setVec3("color", glm::vec3(0.0f, 0.0f, 1.0f));
+		renderText(U"Hello the world", texture, textShader, 1.0, 0, 0);
+		glm::uvec2 vh = getVHbox(U"Hello the worlẤd\nXin chàoẤ", 2.0);
+		draw2D(shader, glm::vec3(1.0f, 0.0f, 0.0f), 540, 2, vh.x, vh.y);
+		textShader.setVec3("color", glm::vec3(1.0f, 0.5f, 1.0f));
+		renderText(U"Hello the worlẤd\nXin chàoẤ", texture, textShader, 2.0, 540, 0);
 		//DrawText----------End
 
 

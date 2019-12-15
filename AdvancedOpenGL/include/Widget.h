@@ -21,7 +21,7 @@ public:
 	virtual void onDragCallback(GLFWwindow*, double, double, double, double) {}
 	virtual void onClick() {}
 	virtual void onDropCallback() {}
-	void draw(Shader& shader, unsigned int VAO)
+	virtual void draw(Shader& shader, unsigned int VAO)
 	{
 		shader.use();
 		shader.setVec3("color", color_m);

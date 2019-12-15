@@ -136,7 +136,7 @@ void renderText(std::u32string_view string, unsigned int texture, Shader &shader
 			{
 				//std::cout << Atlas[ch].advanced;
 				int xPos = x_run + Atlas[ch].bearing.x*scale;
-				int yPos = y_run + size - Atlas[ch].bearing.y*scale;
+				int yPos = y_run + size * scale - Atlas[ch].bearing.y*scale;
 
 				float vertices[] = {
 					xPos, yPos, Atlas[ch].pos.x * step, Atlas[ch].pos.y * step,
@@ -358,7 +358,7 @@ int main()
 		glDisable(GL_CULL_FACE);
 		textshader.use();
 		textshader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-		textshader.setVec3("color", glm::vec3(0.5f,0.5f,1.0f));
+		textshader.setVec3("color", glm::vec3(1.0f,0.5f,1.0f));
 		//glActiveTexture(GL_TEXTURE0);
 		//glBindTexture(GL_TEXTURE_2D, texture);
 		//shader.setInt("text", 0);
@@ -366,7 +366,7 @@ int main()
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glm::uvec2 vh=getVHbox(U"Hello thế giới\nhello the world", 1.5);
 		draw2D(shader, glm::vec3(1.0f, 0.5f, 0.0f), 10, 100, vh.x, vh.y);
-		renderText(U"Hello thế giới\nhello the world", texture, textshader, 1.5, 10, 110);
+		renderText(U"Hello thế giới\nhello the world", texture, textshader, 1.5, 10, 100);
 		//std::cout << vh.x<<"  "<<vh.y<<'\n';
 		//Draw2D----------End
 
