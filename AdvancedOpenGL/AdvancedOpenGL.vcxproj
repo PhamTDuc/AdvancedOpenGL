@@ -444,6 +444,7 @@
     <ClInclude Include="include\glm\vec3.hpp" />
     <ClInclude Include="include\glm\vec4.hpp" />
     <ClInclude Include="include\glm\vector_relational.hpp" />
+    <ClInclude Include="include\ShapeRenderer.h" />
     <ClInclude Include="include\sigslot\signal.hpp" />
     <ClInclude Include="include\Widget.h" />
     <ClInclude Include="include\TextRenderer.h" />
@@ -452,6 +453,7 @@
     <ClCompile Include="include\glad.c" />
     <ClCompile Include="include\Shader.cpp" />
     <ClCompile Include="include\glm\detail\glm.cpp" />
+    <ClCompile Include="include\ShapeRenderer.cpp" />
     <ClCompile Include="include\TextRenderer.cpp" />
     <ClCompile Include="include\Widget.cpp" />
     <ClCompile Include="src\IOSingleton04.cpp" />

@@ -15,6 +15,7 @@
 #include "Shader.h"
 #include "Widget.h"
 #include "TextRenderer.h"
+#include "ShapeRenderer.h"
 
 
 class Application
@@ -32,16 +33,14 @@ private:
 public:
 	static unsigned int SCR_WIDTH;
 	static unsigned int SCR_HEIGHT;
-	static const float vertices[8];
-	static unsigned int VAO, VBO;
-	static Shader shader;
 	static Mouse MouseEvent;
 	static MOUSE_STATUS mouse_status;
 	static GLFWwindow* window;
 	static Widget* hot;
 	static Widget* active;
 	static std::unique_ptr<Widget> root;
-	static TextRenderer textrenderer;
+	//static TextRenderer textrenderer;
+	static Shader ShapeShader;
 	static Shader TextShader;
 	static unsigned int texture;
 	Application()
@@ -92,23 +91,11 @@ public:
 
 		//For render 2D Rectangle
 		//For render 2D Rectangle
-		shader = Shader("shader/button/vertex.vs", "shader/button/fragment.fs");
-		shader.use();
-		shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		ShapeShader = Shader("shader/button/vertex.vs", "shader/button/fragment.fs");
+		ShapeShader.use();
+		ShapeShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
 		
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-
-		glBindVertexArray(VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-		// position attribute
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
+		
 
 		//For render 2D Text
 		//For render 2D Text
@@ -116,8 +103,11 @@ public:
 		TextShader.use();
 		TextShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
 
-		textrenderer.createContext();
-		texture = textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 15);
+		TextRenderer::createContext();
+		ShapeRenderer::createContext();
+
+		Widget::textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 15);
+		//textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 40);
 	}
 
 	static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -127,8 +117,8 @@ public:
 		root->h_m = height;
 		SCR_WIDTH = width;
 		SCR_HEIGHT = height;
-		shader.use();
-		shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		ShapeShader.use();
+		ShapeShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
 
 	}
 
@@ -198,8 +188,8 @@ public:
 			TextShader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
 			TextShader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
 
-			root->drawAll(shader,VAO);
-			textrenderer.renderText(U"hello thế giới\nhello", TextShader,1.5,50);
+			root->drawAll(TextShader,2.0f);
+			//textrenderer.renderText(U"hello thế giới\nhello", TextShader,1.5,50);
 			//Render2D ----- End
 
 
@@ -220,23 +210,15 @@ Application::MOUSE_STATUS Application::mouse_status;
 GLFWwindow* Application::window;
 Widget* Application::hot = nullptr;
 Widget* Application::active = nullptr;
-Shader Application::shader;
-const float Application::vertices[]= {
-	0, 0,
-	1, 0,
-	0, 1,
-	1, 1,
-};
-unsigned int Application::VAO, Application::VBO;
 std::unique_ptr<Widget> Application::root;
-TextRenderer Application::textrenderer;
 Shader Application::TextShader;
+Shader Application::ShapeShader;
 unsigned int Application::texture;
 
 
 struct Button :public Widget
 {
-	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f), Widget* parent = nullptr) : Widget(x, y, w, h,color,parent)
+	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f),Widget* parent = nullptr, std::u32string_view name = U"") : Widget(x, y, w, h,color,parent,name)
 	{
 		if (parent)
 		{ 
@@ -257,12 +239,12 @@ int main()
 
 
 	//Button btn(30, 0, 100, 40, glm::vec3(0.5f, 0.0f, 0.0f), app.root.get());
-	Button btn2(20, 200, 100, 40, glm::vec3(1.0f, 0.0f, 0.0f), app.root.get());
-	Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f), &btn2);
-	Button btn4(80, 20, 100, 40, glm::vec3(0.0f, 0.0f, 1.0f), &btn3);
-	glm::vec2 vh = app.textrenderer.getVHBBox(U"hello thế giới\nhello",1.5);
-	Button btn5(50, 0, vh.x, vh.y, glm::vec3(0.0f, 0.0f, 1.0f), app.root.get());
-	btn2.update(80, 10);
+	Button btn2(0, 0, 100, 40, glm::vec3(1.0f, 0.0f, 0.0f),app.root.get(),U"xin chao");
+	//Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f), &btn2,U"the gioi");
+	//Button btn4(80, 20, 100, 20, glm::vec3(0.0f, 0.0f, 1.0f), &btn3,U"xin\nchao\nthe\ngioi\nmoi");
+	//glm::vec2 vh = app.textrenderer.getVHBBox(U"hello thế giới\nhello",1.5);
+	//Button btn5(50, 0, vh.x, vh.y, glm::vec3(0.0f, 0.0f, 1.0f), app.root.get());
+	//btn2.update(100, 100);
 
 	app.exec_();
 

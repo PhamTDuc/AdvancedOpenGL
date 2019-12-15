@@ -1109,6 +1109,7 @@
     </ClInclude>
     <ClInclude Include="include\Widget.h" />
     <ClInclude Include="include\TextRenderer.h" />
+    <ClInclude Include="include\ShapeRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">
@@ -1121,6 +1122,7 @@
     <ClCompile Include="include\Widget.cpp" />
     <ClCompile Include="include\TextRenderer.cpp" />
     <ClCompile Include="src\IOSingleton04.cpp" />
+    <ClCompile Include="include\ShapeRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />
