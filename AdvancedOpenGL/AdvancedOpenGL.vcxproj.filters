@@ -1108,6 +1108,7 @@
       <Filter>include\sigslot</Filter>
     </ClInclude>
     <ClInclude Include="include\Widget.h" />
+    <ClInclude Include="include\TextRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">
@@ -1118,7 +1119,8 @@
     </ClCompile>
     <ClCompile Include="include\glad.c" />
     <ClCompile Include="include\Widget.cpp" />
-    <ClCompile Include="src\FastTextRender.cpp" />
+    <ClCompile Include="include\TextRenderer.cpp" />
+    <ClCompile Include="src\IOSingleton04.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />

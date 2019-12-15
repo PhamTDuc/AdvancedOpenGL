@@ -11,8 +11,10 @@
 #include <string_view>
 #include <forward_list>
 #include <memory>
+#include <map>
 #include "Shader.h"
 #include "Widget.h"
+#include "TextRenderer.h"
 
 
 class Application
@@ -39,6 +41,9 @@ public:
 	static Widget* hot;
 	static Widget* active;
 	static std::unique_ptr<Widget> root;
+	static TextRenderer textrenderer;
+	static Shader TextShader;
+	static unsigned int texture;
 	Application()
 	{
 		// glfw: initialize and configure
@@ -85,6 +90,8 @@ public:
 
 		root = std::make_unique<Widget>(0,0,SCR_WIDTH,SCR_HEIGHT,glm::vec3(0.0f,0.5f,0.5f));
 
+		//For render 2D Rectangle
+		//For render 2D Rectangle
 		shader = Shader("shader/button/vertex.vs", "shader/button/fragment.fs");
 		shader.use();
 		shader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
@@ -100,6 +107,17 @@ public:
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+
+		//For render 2D Text
+		//For render 2D Text
+		TextShader = Shader("shader/text/vertex.vs", "shader/text/fragment.fs");
+		TextShader.use();
+		TextShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+
+		textrenderer.createContext();
+		texture = textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 15);
 	}
 
 	static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -160,7 +178,7 @@ public:
 	void exec_()
 	{
 		
-
+		//unsigned int texture = TextRenderer::generateFont(U"abcdefghiklmn", 20);
 		while (!glfwWindowShouldClose(window))
 		{
 			glfwPollEvents();
@@ -176,7 +194,12 @@ public:
 			//Render2D
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
-			root->drawAll(shader,VAO);			
+			TextShader.use();
+			TextShader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+			TextShader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
+
+			root->drawAll(shader,VAO);
+			textrenderer.renderText(U"hello thế giới\nhello", TextShader,1.5,50);
 			//Render2D ----- End
 
 
@@ -206,17 +229,20 @@ const float Application::vertices[]= {
 };
 unsigned int Application::VAO, Application::VBO;
 std::unique_ptr<Widget> Application::root;
+TextRenderer Application::textrenderer;
+Shader Application::TextShader;
+unsigned int Application::texture;
 
 
 struct Button :public Widget
 {
-	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f), Widget* pa = nullptr) : Widget(x, y, w, h,color,pa)
+	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f), Widget* parent = nullptr) : Widget(x, y, w, h,color,parent)
 	{
-		if (pa)
+		if (parent)
 		{ 
-			pa->children.emplace_back(this);
-			x_m += pa->x_m;
-			y_m += pa->y_m;
+			parent->children.emplace_back(this);
+			x_m += parent->x_m;
+			y_m += parent->y_m;
 		}
 	}
 };
@@ -228,12 +254,15 @@ int main()
 	app.SCR_WIDTH = 400;
 	app.SCR_HEIGHT = 600;
 	app.setWindow("Hello the world");
-	Button btn(30, 0, 100, 40, glm::vec3(0.5f, 0.0f, 0.0f), app.root.get());
+
+
+	//Button btn(30, 0, 100, 40, glm::vec3(0.5f, 0.0f, 0.0f), app.root.get());
 	Button btn2(20, 200, 100, 40, glm::vec3(1.0f, 0.0f, 0.0f), app.root.get());
 	Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f), &btn2);
-	Button btn4(20, 20, 100, 40, glm::vec3(0.0f, 0.0f, 1.0f), &btn3);
-	Button btn5(20, 20, 100, 40, glm::vec3(0.5f, 0.0f, 1.0f), &btn4);
-	btn2.update(50, 10);
+	Button btn4(80, 20, 100, 40, glm::vec3(0.0f, 0.0f, 1.0f), &btn3);
+	glm::vec2 vh = app.textrenderer.getVHBBox(U"hello thế giới\nhello",1.5);
+	Button btn5(50, 0, vh.x, vh.y, glm::vec3(0.0f, 0.0f, 1.0f), app.root.get());
+	btn2.update(80, 10);
 
 	app.exec_();
 
