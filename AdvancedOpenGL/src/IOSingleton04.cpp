@@ -15,7 +15,6 @@
 #include "Shader.h"
 #include "Widget.h"
 #include "TextRenderer.h"
-#include "ShapeRenderer.h"
 
 
 class Application
