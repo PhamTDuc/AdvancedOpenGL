@@ -15,7 +15,6 @@
 #include "Shader.h"
 #include "Widget.h"
 #include "TextRenderer.h"
-#include "ShapeRenderer.h"
 
 
 class Application
@@ -106,7 +105,7 @@ public:
 		TextRenderer::createContext();
 		ShapeRenderer::createContext();
 
-		Widget::textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 15);
+		Widget::textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớẤấ ", 15);
 		//textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 40);
 	}
 
@@ -188,7 +187,7 @@ public:
 			TextShader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
 			TextShader.setVec3("color", glm::vec3(1.0f, 0.0f, 0.0f));
 
-			root->drawAll(TextShader,2.0f);
+			root->drawAll(TextShader,3.0f);
 			//textrenderer.renderText(U"hello thế giới\nhello", TextShader,1.5,50);
 			//Render2D ----- End
 
@@ -239,7 +238,7 @@ int main()
 
 
 	//Button btn(30, 0, 100, 40, glm::vec3(0.5f, 0.0f, 0.0f), app.root.get());
-	Button btn2(0, 0, 100, 40, glm::vec3(1.0f, 0.0f, 0.0f),app.root.get(),U"xin chao");
+	Button btn2(0, 0, 100, 40, glm::vec3(1.0f, 0.0f, 0.0f),app.root.get(),U"xin chgoấẤ\n\n\nxinchao\ngame");
 	//Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f), &btn2,U"the gioi");
 	//Button btn4(80, 20, 100, 20, glm::vec3(0.0f, 0.0f, 1.0f), &btn3,U"xin\nchao\nthe\ngioi\nmoi");
 	//glm::vec2 vh = app.textrenderer.getVHBBox(U"hello thế giới\nhello",1.5);

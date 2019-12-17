@@ -59,8 +59,9 @@ unsigned int TextRenderer::generateFont(std::u32string_view string, unsigned int
 			ch.pos.x = glm::mod((float)i, (float)dims);
 			ch.pos.y = i / dims;
 			ch.bearing = glm::ivec2(slot->bitmap_left, slot->bitmap_top);
+			ch.size = glm::ivec2(slot->bitmap.width, slot->bitmap.rows);
 			ch.advanced = slot->advance.x >> 6;
-			glTexSubImage2D(GL_TEXTURE_2D, 0, text_size * ch.pos.x, text_size * ch.pos.y, slot->bitmap.width, slot->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, text_size * ch.pos.x, text_size * ch.pos.y, ch.size.x, ch.size.y, GL_RED, GL_UNSIGNED_BYTE, slot->bitmap.buffer);
 			Atlas.emplace(string[i], ch);
 		}
 	}
@@ -87,6 +88,7 @@ void TextRenderer::renderText(std::u32string_view string, Shader& shader, float 
 	shader.setInt("text", 0);
 
 	float step = 0.995f / dims;
+	float size = dims * this->text_size;
 	int x_run = x, y_run = y;
 	for (auto& ch : string)
 	{
@@ -101,9 +103,9 @@ void TextRenderer::renderText(std::u32string_view string, Shader& shader, float 
 			int yPos = y_run + this->text_size * scale - Atlas[ch].bearing.y * scale;
 			float vertices[] = {
 				xPos, yPos, Atlas[ch].pos.x * step, Atlas[ch].pos.y * step,
-				xPos + this->text_size * scale, yPos, (Atlas[ch].pos.x + 1.0f) * step, Atlas[ch].pos.y * step,
-				xPos, yPos + this->text_size * scale, Atlas[ch].pos.x * step, (Atlas[ch].pos.y + 1.0f) * step,
-				xPos + this->text_size * scale, yPos + this->text_size * scale, (Atlas[ch].pos.x + 1.0f) * step, (Atlas[ch].pos.y + 1.0f) * step
+				xPos + Atlas[ch].size.x * scale, yPos, Atlas[ch].pos.x * step + Atlas[ch].size.x/size, Atlas[ch].pos.y * step,
+				xPos, yPos + Atlas[ch].size.y*scale, Atlas[ch].pos.x * step, Atlas[ch].pos.y*step + Atlas[ch].size.y/size,
+				xPos + Atlas[ch].size.x*scale, yPos + Atlas[ch].size.y*scale, Atlas[ch].pos.x* step + Atlas[ch].size.x / size,Atlas[ch].pos.y* step + Atlas[ch].size.y / size
 			};
 
 			glBindVertexArray(textVAO);
