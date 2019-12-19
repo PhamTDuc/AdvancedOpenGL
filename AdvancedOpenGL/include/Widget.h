@@ -27,31 +27,25 @@ public:
 	virtual void onDragCallback(GLFWwindow*, double, double, double, double) {}
 	virtual void onClick() {}
 	virtual void onDropCallback() {}
-	virtual void drawShape(Shader& shader)
+
+
+	virtual void draw(Shader& textshader,float scale, Shader& shapeshader)
 	{
-		shaperenderer.draw(shader, color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
+		shaperenderer.draw(shapeshader, color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
+		glm::vec2 vhbbox = textrenderer.getVHBBox(this->name_m, scale);
+		//textrenderer.renderText(this->name_m, textshader, scale, x_m+(w_m-vhbbox.x)/2, 25, glm::uvec2(0, 0));
+		textrenderer.renderTextAlign(this->name_m, textshader, scale, x_m, y_m, w_m, h_m, TextRenderer::TextAlign::CENTER_CENTER);
 	}
 
-	virtual void drawText(Shader& shader, float scale)
-	{
-		textrenderer.renderText(this->name_m, shader, scale, x_m, y_m,glm::uvec2(0,43));
-	}
-
-	virtual void draw(Shader& shader,float scale)
-	{
-		drawText(shader, scale);
-		//drawShape(shader);
-	}
-
-	void drawAll(Shader& shader,float scale)
+	void drawAll(Shader& textshader,float scale,Shader& shapeshader)
 	{
 		//Draw Parent
-		draw(shader, scale);
+		draw(textshader, scale, shapeshader);
 	
 		//Draw Children
 		for (auto& child : children)
 		{
-			child->drawAll(shader,scale);
+			child->drawAll(textshader,scale,shapeshader);
 		}
 	}
 

@@ -71,7 +71,7 @@ unsigned int TextRenderer::generateFont(std::u32string_view string, unsigned int
 	return texture;
 }
 
-void TextRenderer::renderText(std::u32string_view string, Shader& shader, float scale, unsigned int x, unsigned y, glm::uvec2 margin)
+void TextRenderer::renderText(std::u32string_view string, Shader& shader, float scale, int x, int y,glm::uvec2 margin)
 {
 	glBindVertexArray(textVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, textVBO);
@@ -121,11 +121,43 @@ void TextRenderer::renderText(std::u32string_view string, Shader& shader, float 
 	glBindVertexArray(0);
 }
 
+void TextRenderer::renderTextAlign(std::u32string_view string, Shader& shader, float scale, int x, int y, unsigned int w, unsigned int h,Align align,glm::uvec2 margin)
+{
+	glm::vec2 vhbbox = getVHBBox(string, scale);
+	glm::vec2 pos(x,y);
+	switch (align)
+	{
+	case Align::TOP_CENTER:
+	case Align::CENTER_CENTER:
+	case Align::BOTTOM_CENTER:
+		pos.x = x + (w - vhbbox.x) / 2;
+		break;
+	case Align::TOP_RIGHT:
+	case Align::CENTER_RIGHT:
+	case Align::BOTTOM_RIGHT:
+		pos.x = x + w - vhbbox.x;
+		break;
+	}
+
+	switch (align)
+	{
+	case Align::CENTER_LEFT:
+	case Align::CENTER_CENTER:
+	case Align::CENTER_RIGHT:
+		pos.y = y + (h - vhbbox.y) / 2;
+		break;
+	case Align::BOTTOM_LEFT:
+	case Align::BOTTOM_CENTER:
+	case Align::BOTTOM_RIGHT:
+		pos.y = y + h - vhbbox.y;
+	}
+	renderText(string, shader, scale ,pos.x, pos.y, margin);
+}
 glm::uvec2 TextRenderer::getVHBBox(std::u32string_view string, float scale)
 {
 
 
-	float step = 0.995f / 6.0f;
+	float step = 0.995f / dims;
 	unsigned int w = 0, h = 0;
 	int x_run = 0, y_run = 0;
 	for (auto& ch : string)
@@ -142,6 +174,6 @@ glm::uvec2 TextRenderer::getVHBBox(std::u32string_view string, float scale)
 		}
 	}
 	w = w < x_run ? x_run : w;
-	h = y_run + this->text_size * scale;
+	h = y_run + this->text_size * scale*1.2;
 	return glm::uvec2(w, h);
 }
