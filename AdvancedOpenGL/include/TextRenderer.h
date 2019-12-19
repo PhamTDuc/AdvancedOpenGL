@@ -33,9 +33,17 @@ private:
 
 	static unsigned int textVAO, textVBO;
 public:
+	enum class TextAlign
+	{
+		TOP_LEFT = 0, TOP_CENTER, TOP_RIGHT,
+		CENTER_LEFT, CENTER_CENTER, CENTER_RIGHT,
+		BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT
+	};
+	typedef TextRenderer::TextAlign Align;
 	static void createContext();
 	//Clear Previous Map and Regenerate GlyphsTexture and Map
 	unsigned int generateFont(std::u32string_view string, unsigned int text_size = 20);
-	void renderText(std::u32string_view string, Shader& shader, float scale = 2, unsigned int x = 0, unsigned y = 0, glm::uvec2 margin=glm::uvec2(0));
+	void renderText(std::u32string_view string, Shader& shader, float scale = 2, int x = 0, int y = 0, glm::uvec2 margin=glm::uvec2(0));
+	void renderTextAlign(std::u32string_view string, Shader& shader, float scale, int x, int y, unsigned int w, unsigned int h,Align align=Align::TOP_LEFT,glm::uvec2 margin=glm::uvec2(0));
 	glm::uvec2 getVHBBox(std::u32string_view string, float scale = 2);
 };
