@@ -34,7 +34,7 @@ public:
 
 	virtual void drawText(Shader& shader, float scale)
 	{
-		textrenderer.renderText(this->name_m, shader, scale, x_m, y_m,h_m);
+		textrenderer.renderText(this->name_m, shader, scale, x_m, y_m,glm::uvec2(0,43));
 	}
 
 	virtual void draw(Shader& shader,float scale)

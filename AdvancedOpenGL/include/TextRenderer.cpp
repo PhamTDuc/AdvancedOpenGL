@@ -71,7 +71,7 @@ unsigned int TextRenderer::generateFont(std::u32string_view string, unsigned int
 	return texture;
 }
 
-void TextRenderer::renderText(std::u32string_view string, Shader& shader, float scale, unsigned int x, unsigned y,unsigned int w)
+void TextRenderer::renderText(std::u32string_view string, Shader& shader, float scale, unsigned int x, unsigned y, glm::uvec2 margin)
 {
 	glBindVertexArray(textVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, textVBO);
@@ -86,8 +86,9 @@ void TextRenderer::renderText(std::u32string_view string, Shader& shader, float 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, this->texture);
 	shader.setInt("text", 0);
+	shader.setVec2("margin", margin);
 
-	float step = 0.995f / dims;
+	float step = 0.995 / dims;
 	float size = dims * this->text_size;
 	int x_run = x, y_run = y;
 	for (auto& ch : string)

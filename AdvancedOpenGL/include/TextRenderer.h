@@ -36,6 +36,6 @@ public:
 	static void createContext();
 	//Clear Previous Map and Regenerate GlyphsTexture and Map
 	unsigned int generateFont(std::u32string_view string, unsigned int text_size = 20);
-	void renderText(std::u32string_view string, Shader& shader, float scale = 2, unsigned int x = 0, unsigned y = 0, unsigned int w=0);
+	void renderText(std::u32string_view string, Shader& shader, float scale = 2, unsigned int x = 0, unsigned y = 0, glm::uvec2 margin=glm::uvec2(0));
 	glm::uvec2 getVHBBox(std::u32string_view string, float scale = 2);
 };

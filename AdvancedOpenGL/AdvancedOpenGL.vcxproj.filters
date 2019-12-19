@@ -72,6 +72,15 @@
     <ClInclude Include="include\Shader.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\ShapeRenderer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TextRenderer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Widget.h">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\freetype\config\ftconfig.h">
       <Filter>include\freetype\config</Filter>
     </ClInclude>
@@ -1107,29 +1116,30 @@
     <ClInclude Include="include\sigslot\signal.hpp">
       <Filter>include\sigslot</Filter>
     </ClInclude>
-    <ClInclude Include="include\Widget.h" />
-    <ClInclude Include="include\TextRenderer.h" />
-    <ClInclude Include="include\ShapeRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">
       <Filter>include</Filter>
     </ClCompile>
+    <ClCompile Include="include\ShapeRenderer.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\TextRenderer.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="include\Widget.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
     <ClCompile Include="include\glm\detail\glm.cpp">
       <Filter>include\glm\detail</Filter>
     </ClCompile>
+    <ClCompile Include="src\IOSingleton04.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="include\glad.c" />
-    <ClCompile Include="include\Widget.cpp" />
-    <ClCompile Include="include\TextRenderer.cpp" />
-    <ClCompile Include="src\IOSingleton04.cpp" />
-    <ClCompile Include="include\ShapeRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />
     <Library Include="include\glfw3.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shader\button\vertex.vs" />
-    <None Include="shader\button\fragment.fs" />
   </ItemGroup>
 </Project>

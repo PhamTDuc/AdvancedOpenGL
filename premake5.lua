@@ -39,7 +39,7 @@ project "AdvancedOpenGL"
 
     filter "system:windows"
         cppdialect "C++17"
-        systemversion "10.0.17763.0"
+        systemversion "latest"
         -- postbuildcommands
         -- {
         --     "{COPY} %{cfg.name}/fonts %{cfg.targetdir}",
