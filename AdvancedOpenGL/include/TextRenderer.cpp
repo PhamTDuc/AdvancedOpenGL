@@ -1,8 +1,9 @@
 #include "TextRenderer.h"
 
 unsigned int TextRenderer::textVAO, TextRenderer::textVBO;
+Shader TextRenderer::TextShader;
 
-void TextRenderer::createContext()
+void TextRenderer::createContext(unsigned int w, unsigned int h)
 {
 	glGenBuffers(1, &textVBO);
 	glGenVertexArrays(1, &textVAO);
@@ -15,6 +16,14 @@ void TextRenderer::createContext()
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GL_FLOAT), 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	TextShader = Shader("shader/text/vertex.vs", "shader/text/fragment.fs");
+	updatewDim(w, h);
+}
+
+void TextRenderer::updatewDim(unsigned int w, unsigned int h)
+{
+	TextShader.use();
+	TextShader.setVec2("wDim", w, h);
 }
 
 unsigned int TextRenderer::generateFont(std::u32string_view string, unsigned int text_size)
@@ -71,7 +80,8 @@ unsigned int TextRenderer::generateFont(std::u32string_view string, unsigned int
 	return texture;
 }
 
-void TextRenderer::renderText(std::u32string_view string, Shader& shader, float scale, int x, int y,glm::uvec2 margin)
+
+void TextRenderer::renderText(std::u32string_view string, float scale, const glm::vec3& color, int x, int y, const glm::uvec2& margin)
 {
 	glBindVertexArray(textVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, textVBO);
@@ -82,11 +92,12 @@ void TextRenderer::renderText(std::u32string_view string, Shader& shader, float 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	shader.use();
+	TextShader.use();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, this->texture);
-	shader.setInt("text", 0);
-	shader.setVec2("margin", margin);
+	TextShader.setInt("text", 0);
+	TextShader.setVec3("color", color);
+	TextShader.setVec2("margin", margin);
 
 	float step = 0.995 / dims;
 	float size = dims * this->text_size;
@@ -121,7 +132,7 @@ void TextRenderer::renderText(std::u32string_view string, Shader& shader, float 
 	glBindVertexArray(0);
 }
 
-void TextRenderer::renderTextAlign(std::u32string_view string, Shader& shader, float scale, int x, int y, unsigned int w, unsigned int h,Align align,glm::uvec2 margin)
+void TextRenderer::renderTextAlign(std::u32string_view string, float scale,const glm::vec3 &color, int x, int y, unsigned int w, unsigned int h, Align align,const  glm::uvec2 &margin)
 {
 	glm::vec2 vhbbox = getVHBBox(string, scale);
 	glm::vec2 pos(x,y);
@@ -151,7 +162,7 @@ void TextRenderer::renderTextAlign(std::u32string_view string, Shader& shader, f
 	case Align::BOTTOM_RIGHT:
 		pos.y = y + h - vhbbox.y;
 	}
-	renderText(string, shader, scale ,pos.x, pos.y, margin);
+	renderText(string, scale, color, pos.x, pos.y, margin);
 }
 glm::uvec2 TextRenderer::getVHBBox(std::u32string_view string, float scale)
 {

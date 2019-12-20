@@ -4,44 +4,29 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include "freetype/freetype.h"
 #include <iostream>
 #include <string_view>
-#include <forward_list>
 #include <memory>
-#include <map>
 #include "Shader.h"
 #include "Widget.h"
 #include "TextRenderer.h"
+#include "Config.h"
 
 
 class Application
 {
 private:
-	struct Mouse
-	{
-		double firstX, firstY;
-		double x, y;
-		bool LeftB, MiddleB, RightB;
-	};
-
-	enum MOUSE_STATUS{FREE_MOUSE=0, BUSY_MOUSE};
-
+	enum MOUSE_STATUS { FREE_MOUSE = 0, BUSY_MOUSE };
 public:
 	static unsigned int SCR_WIDTH;
 	static unsigned int SCR_HEIGHT;
-	static Mouse MouseEvent;
+	static GUI::Mouse MouseEvent;
 	static MOUSE_STATUS mouse_status;
 	static GLFWwindow* window;
 	static Widget* hot;
 	static Widget* active;
 	static std::unique_ptr<Widget> root;
 	//static TextRenderer textrenderer;
-	static Shader ShapeShader;
-	static Shader TextShader;
-	static unsigned int texture;
 	Application()
 	{
 		// glfw: initialize and configure
@@ -85,39 +70,19 @@ public:
 		{
 			std::cout << "Failed to initialize GLAD" << std::endl;
 		}
+		root = std::make_unique<Widget>();
 
-		root = std::make_unique<Widget>(0,0,SCR_WIDTH,SCR_HEIGHT,glm::vec3(0.0f,0.5f,0.5f));
-
-		//For render 2D Rectangle
-		//For render 2D Rectangle
-		ShapeShader = Shader("shader/button/vertex.vs", "shader/button/fragment.fs");
-		ShapeShader.use();
-		ShapeShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
-		
-		
-
-		//For render 2D Text
-		//For render 2D Text
-		TextShader = Shader("shader/text/vertex.vs", "shader/text/fragment.fs");
-		TextShader.use();
-		TextShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
-
-		TextRenderer::createContext();
-		ShapeRenderer::createContext();
-
-		Widget::textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớẤấXINCHO ", 15);
-		//textrenderer.generateFont(U"\u2301abcdefghijklmnopqrstuvwxyzếớ ", 40);
+		//Configuration GUI 
+		//Configuration GUI 
+		GUI::createContext(SCR_WIDTH, SCR_HEIGHT);
 	}
 
 	static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	{
 		glViewport(0, 0, width, height);
-		root->w_m = width;
-		root->h_m = height;
 		SCR_WIDTH = width;
 		SCR_HEIGHT = height;
-		ShapeShader.use();
-		ShapeShader.setVec2("wDim", SCR_WIDTH, SCR_HEIGHT);
+		GUI::updatewDim(width, height);
 
 	}
 
@@ -144,16 +109,12 @@ public:
 	}
 
 
-	static bool isOver(Widget* node = nullptr)
-	{
-		return (node->x_m < MouseEvent.x && MouseEvent.x < (node->x_m + node->w_m) && node->y_m < MouseEvent.y && MouseEvent.y < (node->y_m + node->h_m));
-	}
-
+	
 	static void tranversal(Widget* node = nullptr)
 	{
 		if (mouse_status == FREE_MOUSE && node)
 		{
-			if (isOver(node))
+			if (node->isOver(MouseEvent))
 				hot = node;
 			for (auto& child : node->children)
 			{
@@ -163,10 +124,8 @@ public:
 	}
 
 
-
 	void exec_()
 	{
-		
 		//unsigned int texture = TextRenderer::generateFont(U"abcdefghiklmn", 20);
 		while (!glfwWindowShouldClose(window))
 		{
@@ -183,14 +142,7 @@ public:
 			//Render2D
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
-			TextShader.use();
-			TextShader.setVec2("wDim", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-			TextShader.setVec3("color", glm::vec3(1.0f, 1.0f, 0.0f));
-
-			root->drawAll(TextShader,1.0f,ShapeShader);
-			//textrenderer.renderText(U"hello thế giới\nhello", TextShader,1.5,50);
-			//Render2D ----- End
-
+			root->drawAll();
 
 			// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 			// -------------------------------------------------------------------------------
@@ -203,28 +155,30 @@ public:
 
 unsigned int Application::SCR_WIDTH;
 unsigned int Application::SCR_HEIGHT;
-Application::Mouse Application::MouseEvent;
+GUI::Mouse Application::MouseEvent;
 Application::MOUSE_STATUS Application::mouse_status;
 
 GLFWwindow* Application::window;
 Widget* Application::hot = nullptr;
 Widget* Application::active = nullptr;
 std::unique_ptr<Widget> Application::root;
-Shader Application::TextShader;
-Shader Application::ShapeShader;
-unsigned int Application::texture;
 
 
-struct Button :public Widget
+class Button :public Widget
 {
-	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f),Widget* parent = nullptr, std::u32string_view name = U"") : Widget(x, y, w, h,color,parent,name)
+public:
+	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f)) : Widget(x, y, w, h,color){}
+
+	void draw() override
 	{
-		if (parent)
-		{ 
-			parent->children.emplace_back(this);
-			x_m += parent->x_m;
-			y_m += parent->y_m;
-		}
+		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
+		//textrenderer.renderTextAlign(U"Hello the\nworldgp",1.0f,glm::vec3(1.0f,0.0f,0.0f),x_m,y_m,w_m,h_m,Align::BOTTOM_RIGHT);
+		//textrenderer.renderTextAlign(U"Hello the\nworldgp",2.0f,glm::vec3(1.0f,1.0f,0.0f),x_m,y_m+50,w_m,h_m,Align::CENTER_CENTER);
+	}
+
+	bool isOver(GUI::Mouse &MouseEvent) override
+	{
+			return (this->x_m < MouseEvent.x && MouseEvent.x < (this->x_m + this->w_m) && this->y_m < MouseEvent.y && MouseEvent.y < (this->y_m + this->h_m));
 	}
 };
 
@@ -237,13 +191,11 @@ int main()
 	app.setWindow("Hello the world");
 
 
-	//Button btn(30, 0, 100, 40, glm::vec3(0.5f, 0.0f, 0.0f), app.root.get());
-	Button btn2(100, 300, 150, 40, glm::vec3(0.0f, 0.5f, 1.0f),app.root.get(),U"xAAẤin chao game\nXIN CHẤOg");
-	//Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f), &btn2,U"the gioi");
-	//Button btn4(80, 20, 100, 20, glm::vec3(0.0f, 0.0f, 1.0f), &btn3,U"xin\nchao\nthe\ngioi\nmoi");
-	//glm::vec2 vh = app.textrenderer.getVHBBox(U"hello thế giới\nhello",1.5);
-	//Button btn5(50, 0, vh.x, vh.y, glm::vec3(0.0f, 0.0f, 1.0f), app.root.get());
-	//btn2.update(100, 100);
+	Button btn2(100, 300, 150, 50, glm::vec3(0.0f, 0.5f, 1.0f));
+	Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f));
+	btn2.update(-50, 0);
+	btn2.add(btn3);
+	app.root->add(btn2);
 
 	app.exec_();
 

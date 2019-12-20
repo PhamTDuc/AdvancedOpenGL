@@ -1116,6 +1116,8 @@
     <ClInclude Include="include\sigslot\signal.hpp">
       <Filter>include\sigslot</Filter>
     </ClInclude>
+    <ClInclude Include="include\Config.h" />
+    <ClInclude Include="include\Core.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">
