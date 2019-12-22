@@ -28,7 +28,7 @@ void main()
 	if((margin.x !=0.0f && absPos.x > margin.x) || (margin.y!=0.0f && absPos.y > margin.y))
 		FragColor = vec4(0.0f,0.0f,0.0f,0.0f);
 	else
-		FragColor = vec4(color,texture(text,texCoord).r);
+		FragColor = vec4(color,smoothstep(0.0f,1.0f,texture(text,texCoord).r));
 	//FragColor = filled(0.5,20.0,10.0, vec4(color,texture(text,texCoord).r));
 	//FragColor = vec4(color, 1.0f);
 }

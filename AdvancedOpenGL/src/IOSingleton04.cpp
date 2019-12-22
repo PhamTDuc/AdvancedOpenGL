@@ -172,7 +172,7 @@ public:
 	void draw() override
 	{
 		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
-		//textrenderer.renderTextAlign(U"Hello the\nworldgp",1.0f,glm::vec3(1.0f,0.0f,0.0f),x_m,y_m,w_m,h_m,Align::BOTTOM_RIGHT);
+		textrenderer.renderTextAlign(U"Hello the\nworldgp",1.0f,glm::vec3(1.0f,0.0f,0.0f),x_m,y_m,w_m,h_m,Align::BOTTOM_RIGHT);
 		//textrenderer.renderTextAlign(U"Hello the\nworldgp",2.0f,glm::vec3(1.0f,1.0f,0.0f),x_m,y_m+50,w_m,h_m,Align::CENTER_CENTER);
 	}
 
@@ -193,9 +193,11 @@ int main()
 
 	Button btn2(100, 300, 150, 50, glm::vec3(0.0f, 0.5f, 1.0f));
 	Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f));
+	Button btn4(200, 100, 120, 120, glm::vec3(1.0f, 1.0f, 0.0f));
 	btn2.update(-50, 0);
 	btn2.add(btn3);
 	app.root->add(btn2);
+	app.root->add(btn4);
 
 	app.exec_();
 
