@@ -99,7 +99,7 @@ void TextRenderer::renderText(std::u32string_view string, float scale, const glm
 	TextShader.setVec3("color", color);
 	TextShader.setVec2("margin", margin);
 
-	float step = 0.995 / dims;
+	float step = 1.0f / dims;
 	float size = dims * this->text_size;
 	int x_run = x, y_run = y;
 	for (auto& ch : string)
@@ -168,7 +168,7 @@ glm::uvec2 TextRenderer::getVHBBox(std::u32string_view string, float scale)
 {
 
 
-	float step = 0.995f / dims;
+	float step = 1.0f / dims;
 	unsigned int w = 0, h = 0;
 	int x_run = 0, y_run = 0;
 	for (auto& ch : string)

@@ -22,12 +22,12 @@ float sdAnnularShape(float sdf ,float r )
 }
 void main()
 {	
-	float radius = 20.0f;
-	float blur = 10.0f; //Can't be larger than radius
+	float radius = 8.0f;
+	float blur = 1.0f; //  1.0f<=blur<=radius
 	vec2 centeredPos = localPos - 0.5 * rectSize;
 	vec2 halfSize = rectSize/2.0f - vec2(radius);
 	float sdf =  sdAnnularShape(sdfRect(centeredPos,halfSize), radius);
 	
 	float opacity = smoothstep(0.0f, 1.0f, abs(clamp(-blur,0.0f,sdf)/blur));
-	FragColor = vec4(color,opacity);
+	FragColor = vec4(color,opacity*0.2);
 ;}

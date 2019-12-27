@@ -6,6 +6,7 @@
 #include "ShapeRenderer.h"
 #include "Core.h"
 
+
 class Widget
 {
 public:
@@ -18,7 +19,8 @@ public:
 public:
 	Widget(int x = 0, int y = 0, int w = 0, int h = 0,const glm::vec3 &color=glm::vec3(0.5f)) :x_m(x), y_m(y), w_m(w), h_m(h),color_m(color){}
 
-	virtual void onDragCallback(GLFWwindow*, double, double, double, double) {}
+	virtual void onDragCallback(GUI::Mouse &mouseevent) {}
+	virtual void onHover(GUI::Mouse &mouseevent){}
 	virtual void onClick() {}
 	virtual void onDropCallback() {}
 	virtual void draw(){}
@@ -53,6 +55,10 @@ public:
 		children.emplace_back(&widget);
 	}
 
+	void popback()
+	{
+		children.pop_back();
+	}
 	virtual bool isOver(GUI::Mouse &mouse) { return false;}
 
 };

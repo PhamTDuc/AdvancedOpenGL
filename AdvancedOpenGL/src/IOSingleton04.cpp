@@ -86,17 +86,58 @@ public:
 
 	}
 
+	//static void printMouseState()
+	//{
+	//	std::cout << "MousePos:" << MouseEvent.x << " " << MouseEvent.y << "   LEFT " << MouseEvent.LeftB << "   RIGHT " << MouseEvent.RightB << "   MIDDLE " << MouseEvent.MiddleB << '\n';
+	//}
+
 	static void processMouseState()
 	{
-		std::cout << "MousePos:" << MouseEvent.x << " " << MouseEvent.y << "   LEFT " << MouseEvent.LeftB << "   RIGHT " << MouseEvent.RightB << "   MIDDLE " << MouseEvent.MiddleB << '\n';
+		if (hot && hot->isOver(MouseEvent))
+		{
+			hot->onHover(MouseEvent);
+			if (!active)
+			{
+				if (MouseEvent.LeftB || MouseEvent.RightB || MouseEvent.MiddleB)
+				{
+					active = hot;
+					if (MouseEvent.releaseAll)
+					{
+						glfwGetCursorPos(window, &MouseEvent.firstX, &MouseEvent.firstY);
+						MouseEvent.releaseAll = false;
+					}
+				}
+				else
+				{
+					MouseEvent.releaseAll = true;
+				}
+			}
+		}
+		
+
+		if (active)
+		{
+			if (MouseEvent.LeftB)
+			{
+				active->onDragCallback(MouseEvent);
+			}
+			else
+			{
+				if(active->isOver(MouseEvent))
+					active->onClick();
+				active->onDropCallback();
+				active = nullptr;
+			}
+		}
+
 	}
 
 	static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 	{
 		//std::cout << xpos << "   " << ypos<<'\n';
 		glfwGetCursorPos(window, &MouseEvent.x, &MouseEvent.y);
-		//processMouseState();
 		tranversal(root.get());
+		processMouseState();
 	}
 
 	static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -104,8 +145,11 @@ public:
 		MouseEvent.LeftB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 		MouseEvent.RightB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 		MouseEvent.MiddleB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE);
-		//processMouseState();
-		std::cout << hot<<'\n';
+		processMouseState();
+		uint8_t rgb[3];
+		glReadBuffer(GL_LEFT);
+		glReadPixels(MouseEvent.x, SCR_HEIGHT -1- MouseEvent.y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &rgb);
+		std::cout << "Color RGB:" << +rgb[0] << " " << +rgb[1] << " " << +rgb[2] << "\n";
 	}
 
 
@@ -135,7 +179,7 @@ public:
 			//Render3D
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glClearColor(0.6f, 0.2f, 0.8f, 1.0f);
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			//Render3D ----- End 
 			
@@ -163,24 +207,81 @@ Widget* Application::hot = nullptr;
 Widget* Application::active = nullptr;
 std::unique_ptr<Widget> Application::root;
 
+class Message :public Widget
+{
+private:
+	std::u32string_view message;
+public:
+	Message(std::u32string_view mess,int x=0, int y=0,int w=0, int h=0): Widget(x,y,w,h, glm::vec3(0.4, 0.47, 0.92)), message(mess){}
+	void draw() override
+	{
+		textrenderer.renderTextAlign(message,.8f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m, w_m, h_m, Align::CENTER_CENTER);
+	}
+};
 
-class Button :public Widget
+class Frame :public Widget
 {
 public:
-	Button(int x = 0, int y = 0, int w = 0, int h = 0,glm::vec3 &color=glm::vec3(0.5f)) : Widget(x, y, w, h,color){}
-
+	Frame(int x=0, int y=0, int w =0, int h =0): Widget(x,y,w,h,glm::vec3(0.4,0.75,0.92)){}
 	void draw() override
 	{
 		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
-		textrenderer.renderTextAlign(U"Hello the\nworldgp",1.0f,glm::vec3(1.0f,0.0f,0.0f),x_m,y_m,w_m,h_m,Align::BOTTOM_RIGHT);
-		//textrenderer.renderTextAlign(U"Hello the\nworldgp",2.0f,glm::vec3(1.0f,1.0f,0.0f),x_m,y_m+50,w_m,h_m,Align::CENTER_CENTER);
 	}
 
-	bool isOver(GUI::Mouse &MouseEvent) override
+	bool isOver(GUI::Mouse& event) override
 	{
-			return (this->x_m < MouseEvent.x && MouseEvent.x < (this->x_m + this->w_m) && this->y_m < MouseEvent.y && MouseEvent.y < (this->y_m + this->h_m));
+		return (this->x_m < event.x && event.x < (this->x_m + this->w_m) && this->y_m < event.y && event.y < (this->y_m + this->h_m));
+	}
+
+	void onDragCallback(GUI::Mouse& event) override
+	{
+		
+		//std::cout << "First X:" << event.firstX << "  First Y:" << event.firstY << "\n";
+		this->update(event.x-event.firstX,event.y-event.firstY);
+		event.firstX = event.x;
+		event.firstY = event.y;
+	}
+
+	void onHover(GUI::Mouse& event) override
+	{
+		Message* msg = new Message(U"Hello the world frame", 0, 0, 100, 50);
+		this->add(*msg);
 	}
 };
+
+
+
+class Button :public Widget
+{
+private:
+	std::u32string label_m;
+public:
+	Button(std::u32string_view label,int x = 0, int y = 0, int w = 0, int h = 0) : Widget(x, y, w, h, glm::vec3(0.4, 0.47, 0.92)), label_m(label) {}
+	void draw() override
+	{
+		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
+		textrenderer.renderTextAlign(label_m, .8f, glm::vec3(0.42f,0.074f,0.81f), x_m, y_m, w_m, h_m, Align::CENTER_CENTER);
+	}
+
+	bool isOver(GUI::Mouse& event) override
+	{
+		return (this->x_m < event.x && event.x < (this->x_m + this->w_m) && this->y_m < event.y && event.y < (this->y_m + this->h_m));
+	}
+
+	void onClick() override
+	{
+		std::cout << "Is clicked\n";
+		Message* msg =new Message(U"Hello",150,0,100,50);
+		this->add(*msg);
+	}
+
+	void onHover(GUI::Mouse& event) override
+	{
+		Message* msg = new Message(U"Hello the world", 200, 0, 100, 50);
+		this->add(*msg);
+	}
+};
+
 
 
 int main()
@@ -191,13 +292,32 @@ int main()
 	app.setWindow("Hello the world");
 
 
-	Button btn2(100, 300, 150, 50, glm::vec3(0.0f, 0.5f, 1.0f));
-	Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f));
-	Button btn4(200, 100, 120, 120, glm::vec3(1.0f, 1.0f, 0.0f));
-	btn2.update(-50, 0);
-	btn2.add(btn3);
-	app.root->add(btn2);
-	app.root->add(btn4);
+	//Button btn2(100, 300, 150, 50, glm::vec3(0.0f, 0.5f, 1.0f));
+	//Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f));
+	//Button btn4(200, 100, 120, 120, glm::vec3(1.0f, 1.0f, 0.0f));
+	//btn2.update(-50, 0);
+	//btn2.add(btn3);
+	//app.root->add(btn2);
+	//app.root->add(btn4);
+
+	Frame frame(0, 0, 150, 200);
+	Frame frame2(0, 300, 150, 200);
+
+	Button btn1(U"Red Color",5, 10, 140, 36);
+	Button btn2(U"Green Color",5, 50, 140, 36);
+	Button btn3(U"Blue Color",5, 90, 140, 36);
+	Button btn4(U"Yellow Colorg",5, 130, 140, 36);
+	Button btn5(U"Magneta Color",5, 10, 140, 36);
+
+
+	frame.add(btn1);
+	frame.add(btn2);
+	frame.add(btn3);
+	frame.add(btn4);
+
+	frame2.add(btn5);
+	app.root->add(frame);
+	app.root->add(frame2);
 
 	app.exec_();
 
