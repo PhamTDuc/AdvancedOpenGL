@@ -98,7 +98,7 @@ public:
 			hot->onHover(MouseEvent);
 			if (!active)
 			{
-				if (MouseEvent.LeftB || MouseEvent.RightB || MouseEvent.MiddleB)
+				if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) || MouseEvent.RightB || MouseEvent.MiddleB)
 				{
 					active = hot;
 					if (MouseEvent.releaseAll)
@@ -117,7 +117,7 @@ public:
 
 		if (active)
 		{
-			if (MouseEvent.LeftB)
+			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT))
 			{
 				active->onDragCallback(MouseEvent);
 			}
@@ -142,14 +142,14 @@ public:
 
 	static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
-		MouseEvent.LeftB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-		MouseEvent.RightB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-		MouseEvent.MiddleB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE);
+		//MouseEvent.LeftB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+		//MouseEvent.RightB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+		//MouseEvent.MiddleB = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE);
 		processMouseState();
-		uint8_t rgb[3];
-		glReadBuffer(GL_LEFT);
-		glReadPixels(MouseEvent.x, SCR_HEIGHT -1- MouseEvent.y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &rgb);
-		std::cout << "Color RGB:" << +rgb[0] << " " << +rgb[1] << " " << +rgb[2] << "\n";
+		//uint8_t rgb[3];
+		//glReadBuffer(GL_LEFT);
+		//glReadPixels(MouseEvent.x, SCR_HEIGHT -1- MouseEvent.y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, &rgb);
+		//std::cout << "Color RGB:" << +rgb[0] << " " << +rgb[1] << " " << +rgb[2] << "\n";
 	}
 
 
@@ -244,8 +244,8 @@ public:
 
 	void onHover(GUI::Mouse& event) override
 	{
-		Message* msg = new Message(U"Hello the world frame", 0, 0, 100, 50);
-		this->add(*msg);
+		//Message* msg = new Message(U"Hello the world frame", 0, 0, 100, 50);
+		//this->add(*msg);
 	}
 };
 
@@ -263,10 +263,7 @@ public:
 		textrenderer.renderTextAlign(label_m, .8f, glm::vec3(0.42f,0.074f,0.81f), x_m, y_m, w_m, h_m, Align::CENTER_CENTER);
 	}
 
-	bool isOver(GUI::Mouse& event) override
-	{
-		return (this->x_m < event.x && event.x < (this->x_m + this->w_m) && this->y_m < event.y && event.y < (this->y_m + this->h_m));
-	}
+	
 
 	void onClick() override
 	{
@@ -274,12 +271,56 @@ public:
 		Message* msg =new Message(U"Hello",150,0,100,50);
 		this->add(*msg);
 	}
+};
+
+class Menu :public Widget
+{
+private:
+	unsigned int  n_items;
+	unsigned int hoverItem;
+	std::vector<std::u32string_view> items;
+	const static unsigned int itemHeight = 25;
+	Widget* onHoverMenu = nullptr;
+public:
+	Menu() : Widget(0, 0, 100, 0, glm::vec3(0.78)),n_items(0){}
+
+	void addItem(std::u32string_view label)
+	{
+
+		++n_items;
+		h_m += itemHeight;
+		items.emplace_back(label);
+	}
+
+	void draw() override
+	{
+		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
+		shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m,y_m + itemHeight * hoverItem),glm::vec2(100,itemHeight));
+		for (int i=0;i<n_items;++i)
+		{
+			textrenderer.renderTextAlign(items[i], .8f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m + itemHeight*i, w_m, itemHeight, Align::CENTER_CENTER);
+		}
+	}
+
+
+	bool isOver(GUI::Mouse& event) override
+	{
+		return (this->x_m < event.x && event.x < (this->x_m + this->w_m) && this->y_m < event.y && event.y < (this->y_m + this->h_m));
+	}
 
 	void onHover(GUI::Mouse& event) override
 	{
-		Message* msg = new Message(U"Hello the world", 200, 0, 100, 50);
-		this->add(*msg);
+		this->hoverItem = (event.y- this->y_m)/itemHeight;
 	}
+
+	void onDragCallback(GUI::Mouse& event) override
+	{
+
+		//std::cout << "First X:" << event.firstX << "  First Y:" << event.firstY << "\n";
+		this->update(event.x - event.firstX, event.y - event.firstY);
+		event.firstX = event.x;
+		event.firstY = event.y;
+	}S
 };
 
 
@@ -292,33 +333,38 @@ int main()
 	app.setWindow("Hello the world");
 
 
-	//Button btn2(100, 300, 150, 50, glm::vec3(0.0f, 0.5f, 1.0f));
-	//Button btn3(20, 20, 100, 40, glm::vec3(0.0f, 1.0f, 0.0f));
-	//Button btn4(200, 100, 120, 120, glm::vec3(1.0f, 1.0f, 0.0f));
-	//btn2.update(-50, 0);
-	//btn2.add(btn3);
-	//app.root->add(btn2);
-	//app.root->add(btn4);
-
 	Frame frame(0, 0, 150, 200);
 	Frame frame2(0, 300, 150, 200);
+	Frame frame3(100, 300, 150, 200);
 
 	Button btn1(U"Red Color",5, 10, 140, 36);
 	Button btn2(U"Green Color",5, 50, 140, 36);
 	Button btn3(U"Blue Color",5, 90, 140, 36);
 	Button btn4(U"Yellow Colorg",5, 130, 140, 36);
 	Button btn5(U"Magneta Color",5, 10, 140, 36);
+	Button btn6(U"Magneta  Child Color",140, 0, 140, 36);
 
 
 	frame.add(btn1);
 	frame.add(btn2);
 	frame.add(btn3);
 	frame.add(btn4);
-
+	btn5.add(btn6);
 	frame2.add(btn5);
-	app.root->add(frame);
-	app.root->add(frame2);
 
+	app.root->add(frame2);
+	app.root->add(frame3);
+	app.root->add(frame);
+
+	Menu menu;
+	menu.addItem(U"Hello");
+	menu.addItem(U"The");
+	menu.addItem(U"World");
+	menu.addItem(U"Hello2");
+	menu.addItem(U"Hello the world");
+
+	app.root->add(menu);
+	
 	app.exec_();
 
 	std::cin.get();
