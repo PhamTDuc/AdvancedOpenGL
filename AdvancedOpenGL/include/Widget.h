@@ -49,8 +49,7 @@ public:
 
 	void add(Widget& widget)
 	{
-		widget.x_m += this->x_m;
-		widget.y_m += this->y_m;
+		widget.update(this->x_m, this->y_m);
 		widget.parent = this;
 		children.emplace_back(&widget);
 	}

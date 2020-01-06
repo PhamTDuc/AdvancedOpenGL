@@ -6,7 +6,7 @@ namespace GUI
 	{
 		ShapeRenderer::createContext(x, y);
 		TextRenderer::createContext(x, y);
-		Widget::textrenderer.generateFont(U"abcdefghiklmnopqrstuvwxyz ABCDEFGHIKLMNOPQRSTUVWXYZ", 20);
+		Widget::textrenderer.generateFont(U"abcdefghiklmnopqrstuvwxyz ABCDEFGHIKLMNOPQRSTUVWXYZ0123456789", 20);
 	}
 
 	void updatewDim(unsigned int x, unsigned int y)
