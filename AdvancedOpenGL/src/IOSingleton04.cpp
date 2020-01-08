@@ -277,21 +277,35 @@ public:
 class Menu :public Widget
 {
 private:
+	struct MenuItem
+	{
+		std::u32string_view label;
+		Widget* subMenu = nullptr;
+		MenuItem(std::u32string_view label, Widget* subMenu = nullptr)
+		{
+			this->label = label;
+			this->subMenu = subMenu;
+		}
+	};
+
 	unsigned int  n_items;
 	unsigned int hoverItem;
-	std::vector<std::u32string_view> items;
+	std::vector<MenuItem> items;
 	const static unsigned int itemHeight = 25;
 	Widget* onHoverMenu = nullptr;
 public:
 	Menu() : Widget(0, 0, 100, 0, glm::vec3(0.78)),n_items(0){}
 
-	void addItem(std::u32string_view label)
+	void addItem(std::u32string_view label, Widget* subMenu = nullptr)
 	{
 
 		++n_items;
+		if (subMenu)
+			subMenu->update(100, h_m);
 		h_m += itemHeight;
-		items.emplace_back(label);
+		items.emplace_back(label,subMenu);
 	}
+
 
 	void draw() override
 	{
@@ -299,10 +313,13 @@ public:
 		shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m,y_m + itemHeight * hoverItem),glm::vec2(100,itemHeight));
 		for (int i=0;i<n_items;++i)
 		{
-			textrenderer.renderTextAlign(items[i], .8f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m + itemHeight*i, w_m, itemHeight, Align::CENTER_CENTER);
+			textrenderer.renderTextAlign(items[i].label, .7f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m + itemHeight*i, w_m, itemHeight, Align::CENTER_CENTER);
 		}
+		if (onHoverMenu)
+			onHoverMenu->draw();
 	}
 
+	
 
 	bool isOver(GUI::Mouse& event) override
 	{
@@ -312,13 +329,23 @@ public:
 	void onHover(GUI::Mouse& event) override
 	{
 		this->hoverItem = (event.y- this->y_m)/itemHeight;
+		this->onHoverMenu = items[this->hoverItem].subMenu;
+		std::cout << hoverItem << '\n';
+		if(this->onHoverMenu)
+			this->onHoverMenu->onHover(event);
 	}
+
 
 	void onDragCallback(GUI::Mouse& event) override
 	{
 
 		//std::cout << "First X:" << event.firstX << "  First Y:" << event.firstY << "\n";
 		this->update(event.x - event.firstX, event.y - event.firstY);
+		for (auto item : items)
+		{
+			if(item.subMenu)
+				item.subMenu->update(event.x - event.firstX, event.y - event.firstY);
+		}
 		event.firstX = event.x;
 		event.firstY = event.y;
 	}
@@ -362,7 +389,20 @@ int main()
 	menu.addItem(U"The");
 	menu.addItem(U"World");
 	menu.addItem(U"Hello2");
-	menu.addItem(U"Hello the world");
+
+	Menu subMenu;
+	subMenu.addItem(U"SubMenu1");
+	subMenu.addItem(U"SubMenu2");
+	subMenu.addItem(U"SubMenu3");
+	Menu sub2;
+	sub2.addItem(U"SubMenu Sub1");
+	sub2.addItem(U"SubMenu Sub2");
+
+	
+	menu.addItem(U"Hello the world",&subMenu);
+	menu.addItem(U"Menu2",&sub2);
+
+	
 
 	app.root->add(menu);
 	
