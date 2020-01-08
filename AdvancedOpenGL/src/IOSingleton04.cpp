@@ -9,7 +9,7 @@
 #include <memory>
 #include "Shader.h"
 #include "Widget.h"
-#include "TextRenderer.h"
+#include "Menu.h"
 #include "Config.h"
 
 
@@ -25,6 +25,7 @@ public:
 	static GLFWwindow* window;
 	static Widget* hot;
 	static Widget* active;
+	static Menu* menu;
 	static std::unique_ptr<Widget> root;
 	//static TextRenderer textrenderer;
 	Application()
@@ -187,6 +188,7 @@ public:
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 			root->drawAll();
+			menu->exec_(MouseEvent);
 
 			// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 			// -------------------------------------------------------------------------------
@@ -206,6 +208,7 @@ GLFWwindow* Application::window;
 Widget* Application::hot = nullptr;
 Widget* Application::active = nullptr;
 std::unique_ptr<Widget> Application::root;
+Menu* Application::menu = nullptr;
 
 class Message :public Widget
 {
@@ -274,55 +277,7 @@ public:
 	}
 };
 
-class Menu :public Widget
-{
-private:
-	unsigned int  n_items;
-	unsigned int hoverItem;
-	std::vector<std::u32string_view> items;
-	const static unsigned int itemHeight = 25;
-	Widget* onHoverMenu = nullptr;
-public:
-	Menu() : Widget(0, 0, 100, 0, glm::vec3(0.78)),n_items(0){}
 
-	void addItem(std::u32string_view label)
-	{
-
-		++n_items;
-		h_m += itemHeight;
-		items.emplace_back(label);
-	}
-
-	void draw() override
-	{
-		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
-		shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m,y_m + itemHeight * hoverItem),glm::vec2(100,itemHeight));
-		for (int i=0;i<n_items;++i)
-		{
-			textrenderer.renderTextAlign(items[i], .8f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m + itemHeight*i, w_m, itemHeight, Align::CENTER_CENTER);
-		}
-	}
-
-
-	bool isOver(GUI::Mouse& event) override
-	{
-		return (this->x_m < event.x && event.x < (this->x_m + this->w_m) && this->y_m < event.y && event.y < (this->y_m + this->h_m));
-	}
-
-	void onHover(GUI::Mouse& event) override
-	{
-		this->hoverItem = (event.y- this->y_m)/itemHeight;
-	}
-
-	void onDragCallback(GUI::Mouse& event) override
-	{
-
-		//std::cout << "First X:" << event.firstX << "  First Y:" << event.firstY << "\n";
-		this->update(event.x - event.firstX, event.y - event.firstY);
-		event.firstX = event.x;
-		event.firstY = event.y;
-	}
-};
 
 
 
@@ -360,11 +315,33 @@ int main()
 	Menu menu;
 	menu.addItem(U"Hello");
 	menu.addItem(U"The");
+
+	Menu subMenu;
+	subMenu.addItem(U"SubMenu1");
+	subMenu.addItem(U"SubMenu2");
+	subMenu.addItem(U"SubMenu3");
+	Menu subMenu2;
+	subMenu2.addItem(U"SubMenu Sub1");
+	subMenu2.addItem(U"SubMenu Sub2");
+
+	Menu subsubMenu;
+	subsubMenu.addItem(U"Sub Sub 01");
+	subsubMenu.addItem(U"Sub Sub 02");
+	subsubMenu.addItem(U"Sub Sub 03");
+	subsubMenu.addItem(U"Sub Sub 04");
+	subMenu2.addItem(U"Submenu", &subsubMenu);
+	subMenu2.addItem(U"SubMenu Sub3");
+	subMenu2.addItem(U"SubMenu Sub4");
+
+	menu.addItem(U"Hello the world",&subMenu);
+	menu.addItem(U"Menu2",&subMenu2);
 	menu.addItem(U"World");
 	menu.addItem(U"Hello2");
-	menu.addItem(U"Hello the world");
+
+	
 
 	app.root->add(menu);
+	app.menu = &menu;
 	
 	app.exec_();
 

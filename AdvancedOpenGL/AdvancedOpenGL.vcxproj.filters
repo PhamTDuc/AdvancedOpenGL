@@ -1118,6 +1118,7 @@
     </ClInclude>
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\Core.h" />
+    <ClInclude Include="include\Menu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Shader.cpp">

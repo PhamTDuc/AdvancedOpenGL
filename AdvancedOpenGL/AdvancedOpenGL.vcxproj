@@ -101,6 +101,7 @@
     <ClInclude Include="include\GLFW\glfw3.h" />
     <ClInclude Include="include\GLFW\glfw3native.h" />
     <ClInclude Include="include\KHR\khrplatform.h" />
+    <ClInclude Include="include\Menu.h" />
     <ClInclude Include="include\Shader.h" />
     <ClInclude Include="include\ShapeRenderer.h" />
     <ClInclude Include="include\TextRenderer.h" />
