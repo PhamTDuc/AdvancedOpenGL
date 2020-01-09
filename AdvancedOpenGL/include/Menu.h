@@ -15,7 +15,7 @@ private:
 	};
 
 	unsigned int  n_items;
-	unsigned int hoverItem=0;
+	int hoverItem = -1;
 	std::vector<MenuItem> items;
 	const static unsigned int itemHeight = 25;
 	Menu* onHoverMenu = nullptr;
@@ -39,12 +39,12 @@ private:
 	{
 		if (onHoverMenu)
 		{
-			onHoverMenu->hoverItem = 0;
+			onHoverMenu->hoverItem = -1;
 			onHoverMenu->onHoverMenu = nullptr;
 		}
 	}
 public:
-	Menu() : Widget(0, 0, 150, 0, glm::vec3(0.78)), n_items(0) {}
+	Menu() : Widget(0, 0, 120, 0, glm::vec3(0.78)), n_items(0) {}
 
 	void addItem(std::u32string_view label, Menu* subMenu = nullptr)
 	{
@@ -60,7 +60,8 @@ public:
 	void draw() override
 	{
 		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
-		shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m, y_m + itemHeight * hoverItem), glm::vec2(w_m, itemHeight));
+		if(hoverItem !=-1)
+			shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m, y_m + itemHeight * hoverItem), glm::vec2(w_m, itemHeight));
 		for (int i = 0; i < n_items; ++i)
 		{
 			textrenderer.renderTextAlign(items[i].label, .7f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m + itemHeight * i, w_m, itemHeight, Align::CENTER_CENTER);
