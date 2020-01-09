@@ -111,6 +111,7 @@ public:
 				else
 				{
 					MouseEvent.releaseAll = true;
+					MouseEvent.isClicked = false;
 				}
 			}
 		}
@@ -133,7 +134,7 @@ public:
 				active = nullptr;
 			}
 		}
-
+		menu->exec_(MouseEvent);
 	}
 
 	static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
@@ -191,7 +192,6 @@ public:
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 			root->drawAll();
-			menu->exec_(MouseEvent);
 
 			// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 			// -------------------------------------------------------------------------------
