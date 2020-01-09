@@ -337,8 +337,7 @@ int main()
 	menu.addItem(U"Menu2",&subMenu2);
 	menu.addItem(U"World");
 	menu.addItem(U"Hello2");
-
-	
+	menu.addItem(U"Hello the world");
 
 	app.root->add(menu);
 	app.menu = &menu;
