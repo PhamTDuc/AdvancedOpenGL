@@ -37,21 +37,6 @@
     <Filter Include="include\glm\gtx">
       <UniqueIdentifier>{BACD8F38-2659-FDFC-2F6A-80F19B7459FD}</UniqueIdentifier>
     </Filter>
-    <Filter Include="include\glm\out">
-      <UniqueIdentifier>{DFEF8F38-4B7B-FDFC-548C-80F1C09659FD}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\glm\out\build">
-      <UniqueIdentifier>{5EE75349-CA53-0F44-9347-A7A1FF7231AC}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\glm\out\build\x64-Debug">
-      <UniqueIdentifier>{43CAA72B-AFAD-B66B-B8B0-E4A724137DBC}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\glm\out\build\x64-Debug\CMakeFiles">
-      <UniqueIdentifier>{A66F2E43-92D7-F410-FB42-0927E7C90BFD}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="include\glm\out\build\x64-Debug\CMakeFiles\ShowIncludes">
-      <UniqueIdentifier>{AD0420A9-19EC-0A9F-22DA-0C1B8E40AE61}</UniqueIdentifier>
-    </Filter>
     <Filter Include="include\sigslot">
       <UniqueIdentifier>{3DF803CD-A983-7191-B294-F4851E9FCD91}</UniqueIdentifier>
     </Filter>
@@ -60,6 +45,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Config.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Core.h">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\GLFW\glfw3.h">
       <Filter>include\GLFW</Filter>
     </ClInclude>
@@ -1092,9 +1083,6 @@
     <ClInclude Include="include\glm\matrix.hpp">
       <Filter>include\glm</Filter>
     </ClInclude>
-    <ClInclude Include="include\glm\out\build\x64-Debug\CMakeFiles\ShowIncludes\foo.h">
-      <Filter>include\glm\out\build\x64-Debug\CMakeFiles\ShowIncludes</Filter>
-    </ClInclude>
     <ClInclude Include="include\glm\packing.hpp">
       <Filter>include\glm</Filter>
     </ClInclude>
@@ -1116,8 +1104,6 @@
     <ClInclude Include="include\sigslot\signal.hpp">
       <Filter>include\sigslot</Filter>
     </ClInclude>
-    <ClInclude Include="include\Config.h" />
-    <ClInclude Include="include\Core.h" />
     <ClInclude Include="include\Menu.h" />
   </ItemGroup>
   <ItemGroup>
@@ -1136,8 +1122,10 @@
     <ClCompile Include="include\glm\detail\glm.cpp">
       <Filter>include\glm\detail</Filter>
     </ClCompile>
+    <ClCompile Include="src\IOSingleton04.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="include\glad.c" />
-    <ClCompile Include="src\IOSingleton04.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />

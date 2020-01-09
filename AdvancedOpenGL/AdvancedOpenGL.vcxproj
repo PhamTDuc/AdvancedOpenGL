@@ -443,7 +443,6 @@
     <ClInclude Include="include\glm\mat4x3.hpp" />
     <ClInclude Include="include\glm\mat4x4.hpp" />
     <ClInclude Include="include\glm\matrix.hpp" />
-    <ClInclude Include="include\glm\out\build\x64-Debug\CMakeFiles\ShowIncludes\foo.h" />
     <ClInclude Include="include\glm\packing.hpp" />
     <ClInclude Include="include\glm\trigonometric.hpp" />
     <ClInclude Include="include\glm\vec2.hpp" />
