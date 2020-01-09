@@ -36,7 +36,7 @@ public:
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		//glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+		glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
 		//glfwWindowHint(GLFW_DOUBLEBUFFER, GL_FALSE);
 
 #ifdef __APPLE__
@@ -124,8 +124,11 @@ public:
 			}
 			else
 			{
-				if(active->isOver(MouseEvent))
+				if (active->isOver(MouseEvent))
+				{
 					active->onClick();
+					MouseEvent.isClicked = true;
+				};
 				active->onDropCallback();
 				active = nullptr;
 			}

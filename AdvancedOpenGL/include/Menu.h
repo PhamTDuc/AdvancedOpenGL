@@ -44,14 +44,14 @@ private:
 		}
 	}
 public:
-	Menu() : Widget(0, 0, 100, 0, glm::vec3(0.78)), n_items(0) {}
+	Menu() : Widget(0, 0, 150, 0, glm::vec3(0.78)), n_items(0) {}
 
 	void addItem(std::u32string_view label, Menu* subMenu = nullptr)
 	{
 
 		++n_items;
 		if(subMenu)
-			subMenu->update(100, h_m);
+			subMenu->update(w_m - 2, h_m);
 		h_m += itemHeight;
 		items.emplace_back(label, subMenu);
 	}
@@ -60,7 +60,7 @@ public:
 	void draw() override
 	{
 		shaperenderer.draw(color_m, glm::vec2(x_m, y_m), glm::vec2(w_m, h_m));
-		shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m, y_m + itemHeight * hoverItem), glm::vec2(100, itemHeight));
+		shaperenderer.draw(glm::vec3(1.0f), glm::vec2(x_m, y_m + itemHeight * hoverItem), glm::vec2(w_m, itemHeight));
 		for (int i = 0; i < n_items; ++i)
 		{
 			textrenderer.renderTextAlign(items[i].label, .7f, glm::vec3(0.42f, 0.074f, 0.81f), x_m, y_m + itemHeight * i, w_m, itemHeight, Align::CENTER_CENTER);
@@ -71,7 +71,12 @@ public:
 
 	bool isOver(GUI::Mouse& event) override
 	{
-		return true;
+		if (isOverMenu(event))
+			return true;
+		else
+			if (onHoverMenu)
+				return onHoverMenu->isOver(event);
+		return false;
 	}
 
 
@@ -82,6 +87,11 @@ public:
 			hoverItem = (event.y - this->y_m) / itemHeight;
 			onHoverMenu = items[this->hoverItem].subMenu;
 			resetSubMenuItem();
+			if (event.isClicked)
+			{
+				std::cout << "Menu "<<this<<" HoverItem: " << hoverItem << '\n';
+				event.isClicked = false;
+			}
 
 		}
 
