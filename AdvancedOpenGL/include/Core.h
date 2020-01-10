@@ -8,5 +8,6 @@ namespace GUI
 		bool LeftB, MiddleB, RightB;
 		bool releaseAll = true;;
 		bool isClicked;
+		bool isRClicked;
 	};
 }

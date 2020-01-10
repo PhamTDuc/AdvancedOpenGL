@@ -1122,10 +1122,8 @@
     <ClCompile Include="include\glm\detail\glm.cpp">
       <Filter>include\glm\detail</Filter>
     </ClCompile>
-    <ClCompile Include="src\IOSingleton04.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="include\glad.c" />
+    <ClCompile Include="src\IOSingleton04.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="include\freetype.lib" />

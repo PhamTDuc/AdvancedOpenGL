@@ -7,6 +7,7 @@
 #include "Core.h"
 
 
+
 class Widget
 {
 public:
@@ -15,12 +16,13 @@ public:
 	int x_m, y_m, w_m, h_m;
 	glm::vec3 color_m;
 	Widget* parent = nullptr;
+	Widget* menu = nullptr;
 	std::vector<Widget*> children;
 public:
 	Widget(int x = 0, int y = 0, int w = 0, int h = 0,const glm::vec3 &color=glm::vec3(0.5f)) :x_m(x), y_m(y), w_m(w), h_m(h),color_m(color){}
 
-	virtual void onDragCallback(GUI::Mouse &mouseevent) {}
-	virtual void onHover(GUI::Mouse &mouseevent){}
+	virtual void onDragCallback(GUI::Mouse &event) {}
+	virtual void onHover(GUI::Mouse &event){}
 	virtual void onClick() {}
 	virtual void onDropCallback() {}
 	virtual void draw(){}
@@ -29,6 +31,8 @@ public:
 	{
 		//Draw Parent
 		this->draw();
+		if (menu)
+			menu->draw();
 
 		//Draw Children
 		for (auto& child : children)
@@ -59,5 +63,5 @@ public:
 		children.pop_back();
 	}
 	virtual bool isOver(GUI::Mouse &mouse) { return false;}
-
+	virtual void exec_(GUI::Mouse& event) {};
 };

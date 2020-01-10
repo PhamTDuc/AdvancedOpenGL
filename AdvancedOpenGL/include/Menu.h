@@ -104,10 +104,7 @@ public:
 
 	void onDragCallback(GUI::Mouse& event) override
 	{
-
 		//std::cout << "First X:" << event.firstX << "  First Y:" << event.firstY << "\n";
 		this->update(event.x - event.firstX, event.y - event.firstY);
-		event.firstX = event.x;
-		event.firstY = event.y;
 	}
 };

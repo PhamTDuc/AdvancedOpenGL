@@ -298,7 +298,7 @@ int main()
 
 	std::vector<CurvePoint> points { { {20,100},{100,30},{200,90}} ,{{200,400},{300,0},{500,90}},{{350,400},{200,100},{150,90}} };
 	CubicCurve<CurvePoint> cubicCurve(points);
-	CirclePoint<6,12> circlePoint;
+	CirclePoint<12,4> circlePoint;
 
 
 	while(!glfwWindowShouldClose(window))
