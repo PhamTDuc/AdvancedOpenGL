@@ -96,23 +96,7 @@ public:
 	{
 		if (hot && hot->isOver(MouseEvent))
 		{
-			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT))
-			{
-				MouseEvent.isRClicked = true;
-				menu = nullptr;
-			}
-			else
-			{
-				if (MouseEvent.isRClicked)
-				{
-					MouseEvent.isRClicked = false;
-					menu = reinterpret_cast<Menu*>(hot->menu);
-				}
-
-			}
-
 			hot->onHover(MouseEvent);
-
 			if (!active)
 			{
 				if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) || MouseEvent.RightB || MouseEvent.MiddleB)
@@ -127,7 +111,6 @@ public:
 				else
 				{
 					MouseEvent.releaseAll = true;
-					MouseEvent.isClicked = false;
 				}
 			}
 		}
