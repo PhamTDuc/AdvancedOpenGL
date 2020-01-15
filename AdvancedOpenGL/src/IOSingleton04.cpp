@@ -170,8 +170,6 @@ public:
 			{
 				tranversal(child);
 			}
-			if (node->menu && node->menu->isOver(MouseEvent))
-				hot = node->menu;
 		}
 	}
 
@@ -181,7 +179,7 @@ public:
 		//unsigned int texture = TextRenderer::generateFont(U"abcdefghiklmn", 20);
 		while (!glfwWindowShouldClose(window))
 		{
-			glfwWaitEvents();
+			glfwPollEvents();
 			//processMouseState();
 
 			//Render3D
@@ -195,9 +193,7 @@ public:
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 			root->drawAll();
-			if (menu)
-				menu->exec_(MouseEvent);
-		
+			menu->exec_(MouseEvent);
 
 			// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 			// -------------------------------------------------------------------------------
@@ -216,8 +212,8 @@ Application::MOUSE_STATUS Application::mouse_status;
 GLFWwindow* Application::window;
 Widget* Application::hot = nullptr;
 Widget* Application::active = nullptr;
-Menu* Application::menu = nullptr;
 std::unique_ptr<Widget> Application::root;
+Menu* Application::menu = nullptr;
 
 class Message :public Widget
 {
@@ -250,7 +246,8 @@ public:
 		
 		//std::cout << "First X:" << event.firstX << "  First Y:" << event.firstY << "\n";
 		this->update(event.x-event.firstX,event.y-event.firstY);
-		
+		event.firstX = event.x;
+		event.firstY = event.y;
 	}
 
 	void onHover(GUI::Mouse& event) override
@@ -298,10 +295,6 @@ int main()
 
 
 	Frame frame(0, 0, 150, 200);
-	Menu menu2;
-	menu2.addItem(U"Hello");
-	menu2.addItem(U"The");
-	frame.menu = &menu2;
 	Frame frame2(0, 300, 150, 200);
 	Frame frame3(100, 300, 150, 200);
 
@@ -333,8 +326,8 @@ int main()
 	subMenu.addItem(U"SubMenu2");
 	subMenu.addItem(U"SubMenu3");
 	Menu subMenu2;
-	subMenu2.addItem(U"SubMenu Sub1");
-	subMenu2.addItem(U"SubMenu Sub2");
+	//subMenu2.addItem(U"SubMenu Sub1");
+	//subMenu2.addItem(U"SubMenu Sub2");
 
 	Menu subsubMenu;
 	subsubMenu.addItem(U"Sub Sub 01");
@@ -351,10 +344,9 @@ int main()
 	menu.addItem(U"Hello2");
 	menu.addItem(U"Hello the world");
 
-	//app.root->menu = &menu;
-	frame2.menu = reinterpret_cast<Menu*>(&menu);
-	//app.menu = reinterpret_cast<Menu*>(app.root->menu);
-
+	app.root->add(menu);
+	app.menu = &menu;
+	
 	app.exec_();
 
 	std::cin.get();
