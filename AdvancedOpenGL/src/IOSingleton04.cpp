@@ -96,6 +96,7 @@ public:
 	{
 		if (hot && hot->isOver(MouseEvent))
 		{
+			MouseEvent.isClicked = false;
 			hot->onHover(MouseEvent);
 			if (!active)
 			{

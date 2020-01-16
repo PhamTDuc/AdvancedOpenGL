@@ -95,10 +95,18 @@ public:
 			}
 
 		}
+		else
+		{
+			if (this->onHoverMenu)
+				this->onHoverMenu->exec_(event);
+			else
+			{
+				hoverItem = -1;
+				onHoverMenu = nullptr;
+			}
+				
+		}
 		
-
-		if (this->onHoverMenu)
-			this->onHoverMenu->exec_(event);
 	}
 
 
