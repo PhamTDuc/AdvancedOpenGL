@@ -76,7 +76,7 @@ public:
 			return true;
 		else
 			if (onHoverMenu)
-				return onHoverMenu->isOverMenu(event);
+				return onHoverMenu->isOver(event);
 		return false;
 	}
 
@@ -93,12 +93,17 @@ public:
 				std::cout << "Menu "<<this<<" HoverItem: " << hoverItem << '\n';
 				event.isClicked = false;
 			}
-
+		}
+		else
+		{
+			if (this->onHoverMenu)
+				this->onHoverMenu->exec_(event);
+			else
+			{
+				hoverItem = -1;
+			}
 		}
 		
-
-		if (this->onHoverMenu)
-			this->onHoverMenu->exec_(event);
 	}
 
 
