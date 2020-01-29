@@ -102,19 +102,7 @@ public:
 			{
 				hoverItem = -1;
 			}
-		}
-		else
-		{
-			if (this->onHoverMenu)
-				this->onHoverMenu->exec_(event);
-			else
-			{
-				hoverItem = -1;
-				onHoverMenu = nullptr;
-			}
-				
-		}
-		
+		}		
 	}
 
 
